@@ -3,13 +3,8 @@
   "version": "1.0.0",
   "description": "Sistem Manajemen Pasien Cuci Darah",
   "scripts": {
-    "install:backend": "cd backend && npm install",
-    "install:frontend": "cd frontend && npm install",
-    "install:all": "npm run install:backend && npm run install:frontend",
-    "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start",
-    "dev:backend": "cd backend && npm start",
-    "dev:frontend": "cd frontend && npm run dev"
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "npm --prefix backend install && npm --prefix backend start"
   },
   "keywords": ["dialysis", "patient", "management", "hospital"],
   "author": "",
