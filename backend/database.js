@@ -5,7 +5,13 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const db = new Database(join(__dirname, 'hospital.db'));
+// Use environment variable for database path (set by Electron)
+// Falls back to local directory for web deployment
+const dbPath = process.env.DB_PATH || join(__dirname, 'hospital.db');
+
+console.log('Database path:', dbPath);
+
+const db = new Database(dbPath);
 
 // Enable foreign keys
 db.pragma('foreign_keys = ON');

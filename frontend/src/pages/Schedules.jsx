@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function ScheduleModal({ schedule, onClose, onSave }) {
   const [patients, setPatients] = useState([]);
@@ -13,21 +13,57 @@ function ScheduleModal({ schedule, onClose, onSave }) {
     catatan: '',
     status: 'scheduled'
   });
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchPatients();
-    if (schedule) {
-      setFormData(schedule);
+    try {
+      if (schedule) {
+        console.log('Setting form data from schedule:', schedule); // Debug log
+        setFormData({
+          patient_id: schedule.patient_id || '',
+          tanggal: schedule.tanggal || '',
+          waktu_mulai: schedule.waktu_mulai || '',
+          waktu_selesai: schedule.waktu_selesai || '',
+          ruangan: schedule.ruangan || '',
+          mesin_dialisis: schedule.mesin_dialisis || '',
+          perawat: schedule.perawat || '',
+          catatan: schedule.catatan || '',
+          status: schedule.status || 'scheduled'
+        });
+      } else {
+        console.log('No schedule data, using default form data'); // Debug log
+      }
+    } catch (error) {
+      console.error('Error setting form data:', error);
+      setError('Error loading schedule data');
     }
   }, [schedule]);
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('/api/patients');
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const response = await fetch('/api/patients', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
-      setPatients(data);
+      setPatients(data || []);
     } catch (error) {
       console.error('Error fetching patients:', error);
+      setPatients([]);
     }
   };
 
@@ -42,6 +78,25 @@ function ScheduleModal({ schedule, onClose, onSave }) {
       [e.target.name]: e.target.value
     });
   };
+
+  if (error) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>Error</h3>
+            <button className="modal-close" onClick={onClose}>&times;</button>
+          </div>
+          <div className="modal-body">
+            <p style={{ color: 'var(--danger)' }}>{error}</p>
+            <button className="btn btn-primary" onClick={onClose}>
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -192,11 +247,29 @@ function Schedules() {
 
   const fetchSchedules = async () => {
     try {
-      const response = await fetch('/api/schedules');
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const response = await fetch('/api/schedules', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
-      setSchedules(data);
+      console.log('Schedules data received:', data); // Debug log
+      setSchedules(data || []);
     } catch (error) {
       console.error('Error fetching schedules:', error);
+      setSchedules([]);
     }
   };
 
@@ -206,6 +279,11 @@ function Schedules() {
   };
 
   const handleEdit = (schedule) => {
+    console.log('Editing schedule:', schedule); // Debug log
+    if (!schedule) {
+      console.error('No schedule data provided for editing');
+      return;
+    }
     setEditingSchedule(schedule);
     setShowModal(true);
   };
@@ -216,8 +294,12 @@ function Schedules() {
     }
 
     try {
+      const token = localStorage.getItem('authToken');
       await fetch(`/api/schedules/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       fetchSchedules();
     } catch (error) {
@@ -227,24 +309,42 @@ function Schedules() {
 
   const handleSave = async (formData) => {
     try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        alert('Sesi telah berakhir. Silakan login kembali.');
+        return;
+      }
+
       const url = editingSchedule 
         ? `/api/schedules/${editingSchedule.id}`
         : '/api/schedules';
       
       const method = editingSchedule ? 'PUT' : 'POST';
 
-      await fetch(url, {
+      const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Gagal menyimpan jadwal');
+      }
+
+      const result = await response.json();
+      console.log('Schedule saved successfully:', result);
+
       setShowModal(false);
       fetchSchedules();
+      alert(editingSchedule ? 'Jadwal berhasil diperbarui!' : 'Jadwal berhasil ditambahkan!');
     } catch (error) {
       console.error('Error saving schedule:', error);
+      alert('Gagal menyimpan jadwal: ' + error.message);
     }
   };
 
@@ -252,8 +352,38 @@ function Schedules() {
     ? schedules.filter(s => s.tanggal === filterDate)
     : schedules;
 
-  const handleDownload = () => {
-    window.open('/api/schedules/export/csv', '_blank');
+  const handleDownload = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        alert('Sesi telah berakhir. Silakan login kembali.');
+        return;
+      }
+
+      const response = await fetch('/api/schedules/export/csv', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengunduh data');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `jadwal-cuci-darah-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading data:', error);
+      alert('Gagal mengunduh data. Silakan coba lagi.');
+    }
   };
 
   return (
@@ -303,10 +433,10 @@ function Schedules() {
               {filteredSchedules.map(schedule => (
                 <tr key={schedule.id}>
                   <td>
-                    <strong>{schedule.patient_name}</strong>
+                    <strong>{schedule.patient?.nama || schedule.patient_name || 'Nama tidak tersedia'}</strong>
                     <br />
                     <span style={{ fontSize: '0.875rem', color: 'var(--gray)' }}>
-                      {schedule.no_rekam_medis}
+                      {schedule.patient?.no_rekam_medis || schedule.no_rekam_medis || 'RM tidak tersedia'}
                     </span>
                   </td>
                   <td>{new Date(schedule.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>

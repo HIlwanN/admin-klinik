@@ -1,0 +1,24 @@
+# ========================================
+# FRONTEND ENVIRONMENT VARIABLES
+# ========================================
+
+# Supabase Configuration (GANTI DENGAN CREDENTIALS ANDA)
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# API Configuration
+VITE_API_BASE_URL=/api
+
+# Station Configuration
+VITE_STATION_ID=pc-a
+VITE_STATION_NAME="Komputer A - Resepsionis"
+VITE_STATION_LOCATION="Ruang Resepsionis"
+
+# ========================================
+# INSTRUCTIONS
+# ========================================
+
+# 1. Copy file ini ke .env
+# 2. Ganti VITE_SUPABASE_URL dengan URL project Anda dari Supabase Dashboard
+# 3. Ganti VITE_SUPABASE_ANON_KEY dengan anon key project Anda dari Supabase Dashboard
+# 4. Get credentials from: https://supabase.com/dashboard/project/[your-project]/settings/api

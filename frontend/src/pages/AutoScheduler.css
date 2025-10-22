@@ -1,0 +1,230 @@
+/* Auto Schedule Controls */
+.auto-schedule-controls {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.controls-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sync-indicator {
+  background: #4CAF50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Schedule Stats */
+.schedule-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.schedule-stats .stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.875rem;
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* Schedule Grid */
+.schedule-grid-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.schedule-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.schedule-table th {
+  padding: 1rem;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid #ddd;
+}
+
+.shift-column {
+  width: 120px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+}
+
+.day-column {
+  min-width: 150px;
+}
+
+.shift-cell {
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid #ddd;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.shift-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.shift-info strong {
+  font-size: 1rem;
+  color: #333;
+}
+
+.shift-info small {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: normal;
+}
+
+.schedule-cell {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  min-height: 80px;
+  vertical-align: top;
+  background: white;
+}
+
+.schedule-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.schedule-item {
+  background: #f0f0f0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border-left: 3px solid #667eea;
+  font-size: 0.875rem;
+}
+
+.patient-name {
+  font-weight: 600;
+  color: #333;
+  display: block;
+}
+
+.patient-rm {
+  font-size: 0.75rem;
+  color: #666;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.empty-slot {
+  text-align: center;
+  color: #999;
+  font-size: 1.5rem;
+  padding: 1rem;
+}
+
+/* Legend */
+.schedule-legend {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.schedule-legend h4 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.legend-items {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-color {
+  width: 30px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .controls-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .controls-actions {
+    flex-direction: column;
+  }
+
+  .controls-actions .btn {
+    width: 100%;
+  }
+
+  .schedule-table {
+    font-size: 0.875rem;
+  }
+
+  .shift-cell {
+    padding: 0.5rem;
+  }
+
+  .day-column {
+    min-width: 100px;
+  }
+}
+

@@ -1,0 +1,30 @@
+# ========================================
+# SUPABASE CONFIGURATION
+# ========================================
+
+# Supabase Project URL (GANTI DENGAN URL PROJECT ANDA)
+SUPABASE_URL=https://your-project-id.supabase.co
+
+# Supabase Anonymous Key (GANTI DENGAN KEY PROJECT ANDA)
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# JWT Secret for session tokens
+JWT_SECRET=my-super-secret-jwt-key-for-admin-klinik-2024
+
+# Application Configuration
+NODE_ENV=development
+PORT=3000
+
+# Station Configuration
+STATION_ID=pc-a
+STATION_NAME="Komputer A - Resepsionis"
+STATION_LOCATION="Ruang Resepsionis"
+
+# ========================================
+# INSTRUCTIONS
+# ========================================
+
+# 1. Copy file ini ke .env
+# 2. Ganti SUPABASE_URL dengan URL project Anda dari Supabase Dashboard
+# 3. Ganti SUPABASE_ANON_KEY dengan anon key project Anda dari Supabase Dashboard
+# 4. Get credentials from: https://supabase.com/dashboard/project/[your-project]/settings/api

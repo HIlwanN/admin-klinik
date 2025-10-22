@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function PatientModal({ patient, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -11,10 +11,28 @@ function PatientModal({ patient, onClose, onSave }) {
     diagnosa: '',
     golongan_darah: 'A'
   });
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (patient) {
-      setFormData(patient);
+    try {
+      if (patient) {
+        console.log('Setting form data from patient:', patient); // Debug log
+        setFormData({
+          nama: patient.nama || '',
+          no_rekam_medis: patient.no_rekam_medis || '',
+          tanggal_lahir: patient.tanggal_lahir || '',
+          jenis_kelamin: patient.jenis_kelamin || 'Laki-laki',
+          alamat: patient.alamat || '',
+          telepon: patient.telepon || '',
+          diagnosa: patient.diagnosa || '',
+          golongan_darah: patient.golongan_darah || 'A'
+        });
+      } else {
+        console.log('No patient data, using default form data'); // Debug log
+      }
+    } catch (error) {
+      console.error('Error setting form data:', error);
+      setError('Error loading patient data');
     }
   }, [patient]);
 
@@ -29,6 +47,25 @@ function PatientModal({ patient, onClose, onSave }) {
       [e.target.name]: e.target.value
     });
   };
+
+  if (error) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>Error</h3>
+            <button className="modal-close" onClick={onClose}>&times;</button>
+          </div>
+          <div className="modal-body">
+            <p style={{ color: 'var(--danger)' }}>{error}</p>
+            <button className="btn btn-primary" onClick={onClose}>
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -160,11 +197,28 @@ function Patients() {
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('/api/patients');
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const response = await fetch('/api/patients', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
-      setPatients(data);
+      setPatients(data || []);
     } catch (error) {
       console.error('Error fetching patients:', error);
+      setPatients([]);
     }
   };
 
@@ -174,6 +228,11 @@ function Patients() {
   };
 
   const handleEdit = (patient) => {
+    console.log('Editing patient:', patient); // Debug log
+    if (!patient) {
+      console.error('No patient data provided for editing');
+      return;
+    }
     setEditingPatient(patient);
     setShowModal(true);
   };
@@ -184,8 +243,12 @@ function Patients() {
     }
 
     try {
+      const token = localStorage.getItem('authToken');
       await fetch(`/api/patients/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       fetchPatients();
     } catch (error) {
@@ -195,24 +258,42 @@ function Patients() {
 
   const handleSave = async (formData) => {
     try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        alert('Sesi telah berakhir. Silakan login kembali.');
+        return;
+      }
+
       const url = editingPatient 
         ? `/api/patients/${editingPatient.id}`
         : '/api/patients';
       
       const method = editingPatient ? 'PUT' : 'POST';
 
-      await fetch(url, {
+      const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Gagal menyimpan data pasien');
+      }
+
+      const result = await response.json();
+      console.log('Patient saved successfully:', result);
+
       setShowModal(false);
       fetchPatients();
+      alert(editingPatient ? 'Data pasien berhasil diperbarui!' : 'Data pasien berhasil ditambahkan!');
     } catch (error) {
       console.error('Error saving patient:', error);
+      alert('Gagal menyimpan data pasien: ' + error.message);
     }
   };
 
@@ -227,8 +308,38 @@ function Patients() {
     return age;
   };
 
-  const handleDownload = () => {
-    window.open('/api/patients/export/csv', '_blank');
+  const handleDownload = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        alert('Sesi telah berakhir. Silakan login kembali.');
+        return;
+      }
+
+      const response = await fetch('/api/patients/export/csv', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengunduh data');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `data-pasien-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading data:', error);
+      alert('Gagal mengunduh data. Silakan coba lagi.');
+    }
   };
 
   return (
@@ -303,7 +414,10 @@ function Patients() {
       {showModal && (
         <PatientModal
           patient={editingPatient}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            console.log('Closing patient modal'); // Debug log
+            setShowModal(false);
+          }}
           onSave={handleSave}
         />
       )}

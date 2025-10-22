@@ -1,0 +1,21 @@
+# ========================================
+# SUPABASE CONFIGURATION
+# ========================================
+
+# Supabase Project URL
+SUPABASE_URL=https://faqbjrusvpwxkdybtcqd.supabase.co
+
+# Supabase Anonymous Key (HARUS DALAM SATU BARIS!)
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhcWJqcnVzdnB3eGtkeWJ0Y3FkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwNTYzNTgsImV4cCI6MjA3NjYzMjM1OH0.CpF9Y5JIp5x1tcIlPLjQvgSeeT3YqUqHBCBLbNp2X0A
+
+# JWT Secret for session tokens
+JWT_SECRET=my-super-secret-jwt-key-for-admin-klinik-2024
+
+# Application Configuration
+NODE_ENV=development
+PORT=3000
+
+# Station Configuration
+STATION_ID=pc-a
+STATION_NAME="Komputer A - Resepsionis"
+STATION_LOCATION="Ruang Resepsionis"

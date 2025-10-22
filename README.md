@@ -1,6 +1,9 @@
 # Sistem Manajemen Pasien Cuci Darah
 
-Website admin untuk mengelola data dan jadwal pasien cuci darah (hemodialisis) di rumah sakit. Sistem ini dilengkapi dengan fitur CRUD (Create, Read, Update, Delete) lengkap untuk manajemen pasien dan jadwal dialisis.
+**Aplikasi Desktop** untuk mengelola data dan jadwal pasien cuci darah (hemodialisis) di rumah sakit. Sistem ini dilengkapi dengan fitur CRUD (Create, Read, Update, Delete) lengkap untuk manajemen pasien dan jadwal dialisis.
+
+> 💻 **Aplikasi ini sekarang tersedia sebagai Desktop App** menggunakan Electron!  
+> Baca panduan lengkap di [DESKTOP_APP.md](./DESKTOP_APP.md) atau [QUICK_START.md](./QUICK_START.md)
 
 ## 🚀 Fitur Utama
 
@@ -28,6 +31,11 @@ Website admin untuk mengelola data dan jadwal pasien cuci darah (hemodialisis) d
 
 ## 🛠️ Teknologi yang Digunakan
 
+### Desktop App
+- **Electron** - Framework untuk aplikasi desktop cross-platform
+- **Node.js** - Runtime JavaScript
+- **SQLite** - Database lokal offline
+
 ### Backend
 - **Node.js** - Runtime JavaScript
 - **Express.js** - Web framework
@@ -48,37 +56,63 @@ Sebelum memulai, pastikan Anda telah menginstal:
 
 ## 🚀 Instalasi dan Menjalankan Aplikasi
 
-### 1. Install Dependencies
+### Mode Desktop App (Direkomendasikan) 💻
 
-#### Backend
+#### Quick Start
+```bash
+# 1. Install dependencies
+npm install
+cd frontend && npm install && cd ..
+cd backend && npm install && cd ..
+
+# 2. Jalankan aplikasi desktop
+npm run dev
+
+# 3. Build aplikasi desktop (untuk distribusi)
+npm run electron:build:win    # Windows
+npm run electron:build:mac    # macOS
+npm run electron:build:linux  # Linux
+```
+
+File installer akan ada di folder `dist-electron/`
+
+**Baca panduan lengkap**: [DESKTOP_APP.md](./DESKTOP_APP.md) | [QUICK_START.md](./QUICK_START.md)
+
+---
+
+### Mode Web Application (Alternatif) 🌐
+
+#### 1. Install Dependencies
+
+**Backend**
 ```bash
 cd backend
 npm install
 ```
 
-#### Frontend
+**Frontend**
 ```bash
 cd frontend
 npm install
 ```
 
-### 2. Menjalankan Aplikasi
+#### 2. Menjalankan Aplikasi
 
-#### Jalankan Backend (Terminal 1)
+**Jalankan Backend (Terminal 1)**
 ```bash
 cd backend
 npm start
 ```
 Backend akan berjalan di `http://localhost:3000`
 
-#### Jalankan Frontend (Terminal 2)
+**Jalankan Frontend (Terminal 2)**
 ```bash
 cd frontend
 npm run dev
 ```
 Frontend akan berjalan di `http://localhost:5173`
 
-### 3. Akses Aplikasi
+#### 3. Akses Aplikasi
 
 Buka browser dan kunjungi: **http://localhost:5173**
 
@@ -214,17 +248,28 @@ Hapus file `backend/hospital.db` dan restart backend untuk membuat database baru
 
 ISC License
 
+## 🎁 Keuntungan Desktop App
+
+✅ **Offline First** - Tidak perlu internet  
+✅ **Fast Performance** - Akses database lokal sangat cepat  
+✅ **Easy Distribution** - Installer untuk Windows/Mac/Linux  
+✅ **Data Security** - Data tersimpan lokal di komputer user  
+✅ **No Hosting Cost** - Tidak perlu bayar hosting atau cloud  
+✅ **Cross Platform** - Support Windows, macOS, dan Linux  
+
 ## 👨‍💻 Pengembangan Lebih Lanjut
 
 Fitur yang bisa ditambahkan:
+- [x] Desktop Application dengan Electron ✅
 - [ ] Autentikasi dan authorization
 - [x] Export data ke CSV/Excel ✅
 - [ ] Export data ke PDF
-- [ ] Notifikasi jadwal
+- [ ] Notifikasi jadwal (desktop notifications)
 - [ ] History medical records
 - [ ] Multi-user dengan role management
-- [ ] Backup dan restore database
+- [ ] Backup dan restore database (auto backup)
 - [ ] Print jadwal harian/mingguan
+- [ ] Auto-update untuk desktop app
 
 ---
 

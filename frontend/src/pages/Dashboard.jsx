@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function Dashboard() {
   const [stats, setStats] = useState({
@@ -8,23 +8,47 @@ function Dashboard() {
     upcomingSchedules: 0
   });
   const [recentSchedules, setRecentSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Auto refresh setiap 30 detik
+    const interval = setInterval(fetchDashboardData, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        setLoading(false);
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
       const [patientsRes, schedulesRes] = await Promise.all([
-        fetch('/api/patients'),
-        fetch('/api/schedules')
+        fetch('/api/patients', { headers }),
+        fetch('/api/schedules', { headers })
       ]);
+
+      if (!patientsRes.ok || !schedulesRes.ok) {
+        throw new Error('Failed to fetch data');
+      }
 
       const patients = await patientsRes.json();
       const schedules = await schedulesRes.json();
 
       const today = new Date().toISOString().split('T')[0];
-      const todaySchedules = schedules.filter(s => s.tanggal === today);
+      const todaySchedules = schedules.filter(s => s.tanggal === today && s.status === 'scheduled');
       const upcomingSchedules = schedules.filter(s => s.tanggal > today && s.status === 'scheduled');
 
       setStats({
@@ -34,42 +58,79 @@ function Dashboard() {
         upcomingSchedules: upcomingSchedules.length
       });
 
-      setRecentSchedules(schedules.slice(0, 5));
+      // Sort jadwal berdasarkan tanggal terbaru dan ambil 5 teratas
+      const sortedSchedules = schedules
+        .sort((a, b) => new Date(b.created_at || b.tanggal) - new Date(a.created_at || a.tanggal))
+        .slice(0, 5);
+
+      console.log('Processed schedules for dashboard:', sortedSchedules); // Debug log
+      setRecentSchedules(sortedSchedules);
+      setLastUpdated(new Date());
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="page-header">
+          <h2>Dashboard</h2>
+        </div>
+        <div className="loading-dashboard">
+          <div className="loading-spinner"></div>
+          <p>Memuat data dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
       <div className="page-header">
         <h2>Dashboard</h2>
+        <div className="dashboard-controls">
+          {lastUpdated && (
+            <span className="last-updated">
+              Terakhir diperbarui: {lastUpdated.toLocaleTimeString('id-ID')}
+            </span>
+          )}
+          <button className="btn btn-secondary" onClick={fetchDashboardData}>
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        <div className="card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-          <h3 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>{stats.totalPatients}</h3>
-          <p style={{ opacity: 0.9 }}>Total Pasien</p>
+      <div className="stats-grid">
+        <div className="stat-card stat-purple">
+          <div className="stat-number">{stats.totalPatients}</div>
+          <div className="stat-label">Total Pasien</div>
         </div>
         
-        <div className="card" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
-          <h3 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>{stats.todaySchedules}</h3>
-          <p style={{ opacity: 0.9 }}>Jadwal Hari Ini</p>
+        <div className="stat-card stat-pink">
+          <div className="stat-number">{stats.todaySchedules}</div>
+          <div className="stat-label">Jadwal Hari Ini</div>
         </div>
         
-        <div className="card" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white' }}>
-          <h3 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>{stats.upcomingSchedules}</h3>
-          <p style={{ opacity: 0.9 }}>Jadwal Mendatang</p>
+        <div className="stat-card stat-blue">
+          <div className="stat-number">{stats.upcomingSchedules}</div>
+          <div className="stat-label">Jadwal Mendatang</div>
         </div>
         
-        <div className="card" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white' }}>
-          <h3 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>{stats.totalSchedules}</h3>
-          <p style={{ opacity: 0.9 }}>Total Jadwal</p>
+        <div className="stat-card stat-green">
+          <div className="stat-number">{stats.totalSchedules}</div>
+          <div className="stat-label">Total Jadwal</div>
         </div>
       </div>
 
       <div className="card">
-        <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: '600' }}>Jadwal Terbaru</h3>
+        <div className="card-header">
+          <h3>Jadwal Terbaru</h3>
+          <span className="schedules-count">{recentSchedules.length} jadwal</span>
+        </div>
+        
         {recentSchedules.length > 0 ? (
           <div className="table-container">
             <table>
@@ -86,18 +147,27 @@ function Dashboard() {
                 {recentSchedules.map(schedule => (
                   <tr key={schedule.id}>
                     <td>
-                      <strong>{schedule.patient_name}</strong>
-                      <br />
-                      <span style={{ fontSize: '0.875rem', color: 'var(--gray)' }}>
-                        {schedule.no_rekam_medis}
-                      </span>
+                      <div className="patient-info">
+                        <strong>{schedule.patient?.nama || schedule.patient_name || 'Nama tidak tersedia'}</strong>
+                        <div className="patient-rm">RM: {schedule.patient?.no_rekam_medis || schedule.no_rekam_medis || 'RM tidak tersedia'}</div>
+                      </div>
                     </td>
                     <td>{new Date(schedule.tanggal).toLocaleDateString('id-ID')}</td>
-                    <td>{schedule.waktu_mulai} - {schedule.waktu_selesai}</td>
-                    <td>{schedule.ruangan || '-'}</td>
+                    <td>
+                      <span className="time-range">
+                        {schedule.waktu_mulai} - {schedule.waktu_selesai}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="room-info">
+                        {schedule.ruangan || '-'}
+                      </span>
+                    </td>
                     <td>
                       <span className={`badge badge-${schedule.status}`}>
-                        {schedule.status}
+                        {schedule.status === 'scheduled' ? 'Terjadwal' : 
+                         schedule.status === 'completed' ? 'Selesai' : 
+                         schedule.status === 'cancelled' ? 'Dibatalkan' : schedule.status}
                       </span>
                     </td>
                   </tr>
@@ -107,7 +177,9 @@ function Dashboard() {
           </div>
         ) : (
           <div className="empty-state">
-            <p>Belum ada jadwal</p>
+            <div className="empty-icon">📅</div>
+            <h4>Belum ada jadwal</h4>
+            <p>Jadwal yang ditambahkan akan muncul di sini</p>
           </div>
         )}
       </div>
