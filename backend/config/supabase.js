@@ -23,7 +23,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 });
 
 // Database helper functions
-export const db = {
+const db = {
   // ==================== PATIENTS ====================
   
   async getPatients() {
@@ -98,6 +98,80 @@ export const db = {
     
     if (error) {
       console.error('Error deleting patient:', error);
+      throw error;
+    }
+    return { success: true };
+  },
+
+  // ==================== DECEASED PATIENTS ====================
+
+  async getDeceasedPatients() {
+    const { data, error } = await supabase
+      .from('deceased_patients')
+      .select('*')
+      .order('tanggal_meninggal', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching deceased patients:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  async getDeceasedPatient(id) {
+    const { data, error } = await supabase
+      .from('deceased_patients')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching deceased patient:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  async createDeceasedPatient(deceasedData) {
+    const { data, error } = await supabase
+      .from('deceased_patients')
+      .insert(deceasedData)
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error creating deceased patient:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  async updateDeceasedPatient(id, deceasedData) {
+    const { data, error } = await supabase
+      .from('deceased_patients')
+      .update({
+        ...deceasedData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error updating deceased patient:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  async deleteDeceasedPatient(id) {
+    const { error } = await supabase
+      .from('deceased_patients')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting deceased patient:', error);
       throw error;
     }
     return { success: true };
@@ -281,124 +355,6 @@ export const db = {
     }
   },
 
-  async autoGenerateSchedules(params) {
-    try {
-      const { startDate, endDate, shift, maxPatientsPerShift } = params;
-      
-      // Get all patients
-      const { data: patients, error: patientsError } = await supabase
-        .from('patients')
-        .select('*')
-        .order('created_at', { ascending: true });
-      
-      if (patientsError) throw patientsError;
-      
-      if (!patients || patients.length === 0) {
-        throw new Error('No patients available for scheduling');
-      }
-      
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      const shifts = [
-        { id: 'pagi', waktu_mulai: '07:00', waktu_selesai: '11:00' },
-        { id: 'siang', waktu_mulai: '11:00', waktu_selesai: '15:00' },
-        { id: 'sore', waktu_mulai: '15:00', waktu_selesai: '19:00' },
-        { id: 'malam', waktu_mulai: '19:00', waktu_selesai: '23:00' }
-      ];
-      
-      const shiftsToUse = shift === 'all' 
-        ? shifts 
-        : shifts.filter(s => s.id === shift);
-      
-      const schedules = [];
-      let patientIndex = 0;
-      
-      // Loop through dates
-      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-        const dayOfWeek = date.getDay();
-        
-        // Skip Sundays (0 = Sunday)
-        if (dayOfWeek === 0) continue;
-        
-        const dateStr = date.toISOString().split('T')[0];
-        
-        // Loop through shifts
-        for (const shiftInfo of shiftsToUse) {
-          // Assign patients to this shift
-          for (let i = 0; i < maxPatientsPerShift && patientIndex < patients.length; i++) {
-            const patient = patients[patientIndex];
-            
-            schedules.push({
-              patient_id: patient.id,
-              tanggal: dateStr,
-              waktu_mulai: shiftInfo.waktu_mulai,
-              waktu_selesai: shiftInfo.waktu_selesai,
-              ruangan: `Ruang ${Math.floor(i / 2) + 1}`,
-              mesin_dialisis: `Mesin ${(i % 3) + 1}`,
-              perawat: `Perawat ${(i % 5) + 1}`,
-              status: 'scheduled',
-              catatan: 'Auto-generated schedule'
-            });
-            
-            patientIndex++;
-          }
-          
-          // Reset to beginning if we've scheduled all patients
-          if (patientIndex >= patients.length) {
-            patientIndex = 0;
-          }
-        }
-      }
-      
-      // Batch insert schedules
-      const { data: createdSchedules, error: insertError } = await supabase
-        .from('schedules')
-        .insert(schedules)
-        .select();
-      
-      if (insertError) throw insertError;
-      
-      return {
-        success: true,
-        totalSchedules: createdSchedules.length,
-        schedules: createdSchedules
-      };
-    } catch (error) {
-      console.error('Error auto-generating schedules:', error);
-      throw error;
-    }
-  },
-
-  async clearAllSchedules() {
-    try {
-      // First, get count of schedules to delete
-      const { count: beforeCount } = await supabase
-        .from('schedules')
-        .select('*', { count: 'exact', head: true });
-      
-      console.log(`🗑️ Attempting to delete ${beforeCount} schedules...`);
-      
-      // Delete all schedules - for UUID columns, use NOT IS NULL instead of numeric comparison
-      const { data, error } = await supabase
-        .from('schedules')
-        .delete()
-        .not('id', 'is', null)  // ✅ Works with UUID columns
-        .select();
-      
-      if (error) {
-        console.error('❌ Delete error:', error);
-        throw error;
-      }
-      
-      console.log(`✅ Successfully deleted ${data?.length || 0} schedules`);
-      
-      return { success: true, message: 'All schedules cleared', deletedCount: data?.length || 0 };
-    } catch (error) {
-      console.error('Error clearing schedules:', error);
-      throw error;
-    }
-  },
 
   // ==================== BED MANAGEMENT FUNCTIONS ====================
 

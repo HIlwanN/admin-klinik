@@ -47,9 +47,6 @@ if (!isElectron) {
 }
 app.use(express.json());
 
-// Serve static files from frontend build (for production)
-app.use(express.static(join(__dirname, '../frontend/dist')));
-
 // Helper function to update timestamp
 const updateTimestamp = () => new Date().toISOString();
 
@@ -253,6 +250,116 @@ app.get('/api/patients/export/csv', authenticateToken, (req, res) => {
   }
 });
 
+// ==================== DECEASED PATIENTS ROUTES ====================
+
+// Get all deceased patients
+app.get('/api/deceased-patients', authenticateToken, async (req, res) => {
+  try {
+    const deceasedPatients = await db.getDeceasedPatients();
+    res.json(deceasedPatients);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single deceased patient
+app.get('/api/deceased-patients/:id', authenticateToken, async (req, res) => {
+  try {
+    const deceasedPatient = await db.getDeceasedPatient(req.params.id);
+    res.json(deceasedPatient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create deceased patient
+app.post('/api/deceased-patients', authenticateToken, async (req, res) => {
+  try {
+    const deceasedData = req.body;
+    const userId = req.user.userId;
+    const stationId = req.body.station_id || 'unknown';
+    
+    const deceasedPatient = await db.createDeceasedPatient(deceasedData);
+    
+    // Log the creation
+    await db.logAudit(
+      userId,
+      stationId,
+      'create',
+      'deceased_patients',
+      deceasedPatient.id,
+      null,
+      deceasedPatient,
+      `Created deceased patient record: ${deceasedPatient.nama_pasien}`
+    );
+    
+    res.status(201).json(deceasedPatient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update deceased patient
+app.put('/api/deceased-patients/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deceasedData = req.body;
+    const userId = req.user.userId;
+    const stationId = req.body.station_id || 'unknown';
+    
+    // Get old data for audit
+    const oldDeceasedPatient = await db.getDeceasedPatient(id);
+    
+    const deceasedPatient = await db.updateDeceasedPatient(id, deceasedData);
+    
+    // Log the update
+    await db.logAudit(
+      userId,
+      stationId,
+      'update',
+      'deceased_patients',
+      id,
+      oldDeceasedPatient,
+      deceasedPatient,
+      `Updated deceased patient record: ${deceasedPatient.nama_pasien}`
+    );
+    
+    res.json(deceasedPatient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete deceased patient
+app.delete('/api/deceased-patients/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const stationId = req.body.station_id || 'unknown';
+    
+    // Get old data for audit
+    const deceasedPatient = await db.getDeceasedPatient(id);
+    
+    await db.deleteDeceasedPatient(id);
+    
+    // Log the deletion
+    await db.logAudit(
+      userId,
+      stationId,
+      'delete',
+      'deceased_patients',
+      id,
+      deceasedPatient,
+      null,
+      `Deleted deceased patient record: ${deceasedPatient.nama_pasien}`
+    );
+    
+    res.json({ message: 'Deceased patient record deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ==================== SCHEDULE ROUTES ====================
 
 // Get all schedules with patient info
@@ -311,39 +418,6 @@ app.get('/api/schedules/export/csv', authenticateToken, async (req, res) => {
   }
 });
 
-// Auto-generate schedules
-app.post('/api/schedules/auto-generate', authenticateToken, async (req, res) => {
-  try {
-    const { startDate, endDate, shift, maxPatientsPerShift } = req.body;
-    
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'Start date and end date are required' });
-    }
-    
-    const result = await db.autoGenerateSchedules({
-      startDate,
-      endDate,
-      shift,
-      maxPatientsPerShift
-    });
-    
-    res.json(result);
-  } catch (error) {
-    console.error('Error in /api/schedules/auto-generate:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Clear all schedules
-app.delete('/api/schedules/clear', authenticateToken, async (req, res) => {
-  try {
-    const result = await db.clearAllSchedules();
-    res.json(result);
-  } catch (error) {
-    console.error('Error in /api/schedules/clear:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
 
 // ==================== BED MANAGEMENT ROUTES ====================
 
@@ -610,10 +684,13 @@ app.get('/api/health', async (req, res) => {
 
 // ==================== SERVER ====================
 
-// Serve frontend for any other routes (SPA support)
-app.get('*', (req, res) => {
-  res.sendFile(join(__dirname, '../frontend/dist/index.html'));
-});
+// Serve static files from frontend build (for production) - DISABLED FOR TESTING
+// app.use(express.static(join(__dirname, '../frontend/dist')));
+
+// Serve frontend for any other routes (SPA support) - DISABLED FOR TESTING
+// app.get('*', (req, res) => {
+//   res.sendFile(join(__dirname, '../frontend/dist/index.html'));
+// });
 
 // Only start server if not in Vercel (serverless)
 if (process.env.VERCEL !== '1') {
