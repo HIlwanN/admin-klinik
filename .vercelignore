@@ -1,0 +1,40 @@
+# Ignore Electron files for web deployment
+electron/
+dist-electron/
+build/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+
+# Ignore root package.json electron dependencies
+package.json
+package-lock.json
+
+# Ignore desktop-specific files
+.electronrc
+CARA_BUILD_EXE.md
+DESKTOP_APP.md
+build-windows.bat
+install.bat
+install.sh
+
+# Ignore development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Ignore database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore temporary files
+tmp/
+temp/

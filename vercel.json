@@ -29,6 +29,8 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "installCommand": "npm install --prefix frontend && npm install --prefix backend",
+  "buildCommand": "npm --prefix frontend run build"
 }
 
