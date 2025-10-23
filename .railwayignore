@@ -1,0 +1,42 @@
+# Ignore Electron files for web deployment
+electron/
+dist-electron/
+build/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+
+# Ignore development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Ignore database files
+*.db
+*.sqlite
+*.sqlite3
+hospital.db
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore temporary files
+tmp/
+temp/
+
+# Ignore documentation
+*.md
+docs/
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore node_modules (will be installed by Railway)
+node_modules/
+frontend/node_modules/
+backend/node_modules/
