@@ -13,24 +13,21 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/frontend/dist/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/dist/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "env": {
     "NODE_ENV": "production"
   },
   "installCommand": "npm install --prefix frontend && npm install --prefix backend",
-  "buildCommand": "npm --prefix frontend run build"
+  "buildCommand": "npm --prefix frontend run build",
+  "outputDirectory": "frontend/dist"
 }
 
