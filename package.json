@@ -7,7 +7,7 @@
   "scripts": {
     "build": "npm --prefix frontend install && npm --prefix frontend run build",
     "start": "npm --prefix backend install && npm --prefix backend start",
-    "start:production": "npm run build && npm --prefix backend start",
+    "start:production": "npm run build && npm --prefix backend install && npm --prefix backend start",
     "electron:dev": "cross-env NODE_ENV=development electron .",
     "electron:build": "npm run build && electron-builder",
     "electron:build:win": "npm run build && electron-builder --win",
