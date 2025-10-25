@@ -105,6 +105,13 @@ function Dashboard() {
       // Calculate stats based on filtered data
       const today = new Date().toISOString().split('T')[0];
       const todaySchedules = schedules.filter(s => s.tanggal === today);
+      
+      console.log('Dashboard data fetched:', {
+        patientsCount: patients.length,
+        schedulesCount: schedules.length,
+        todaySchedulesCount: todaySchedules.length,
+        filters: filters
+      });
       const upcomingSchedules = schedules.filter(s => s.tanggal > today);
 
       setStats({

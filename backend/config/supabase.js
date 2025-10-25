@@ -268,6 +268,8 @@ const db = {
   },
 
   async getSchedulesByDateRange(startDate, endDate) {
+    console.log('getSchedulesByDateRange called with:', { startDate, endDate });
+    
     const { data, error } = await supabase
       .from('schedules')
       .select(`
@@ -282,6 +284,8 @@ const db = {
       console.error('Error fetching schedules by date range:', error);
       throw error;
     }
+    
+    console.log('getSchedulesByDateRange result:', data.length, 'schedules');
     return data;
   },
 

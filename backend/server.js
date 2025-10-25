@@ -402,16 +402,22 @@ app.delete('/api/deceased-patients/:id', authenticateToken, async (req, res) => 
 app.get('/api/schedules', authenticateToken, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
+    console.log('Schedules API called with filters:', { startDate, endDate });
     
     let schedules;
     if (startDate && endDate) {
+      console.log('Filtering schedules by date range:', startDate, 'to', endDate);
       schedules = await db.getSchedulesByDateRange(startDate, endDate);
+      console.log('Filtered schedules count:', schedules.length);
     } else {
+      console.log('Getting all schedules (no filter)');
       schedules = await db.getSchedules();
+      console.log('All schedules count:', schedules.length);
     }
     
     res.json(schedules);
   } catch (error) {
+    console.error('Error in schedules API:', error);
     res.status(500).json({ error: error.message });
   }
 });

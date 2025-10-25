@@ -6,9 +6,12 @@ function DateFilter({ onFilter, onDownload, reportType, loading = false }) {
   const [showFilter, setShowFilter] = useState(false);
 
   const handleFilter = () => {
+    console.log('DateFilter handleFilter called with:', { startDate, endDate });
     if (startDate && endDate) {
+      console.log('Calling onFilter with:', { startDate, endDate });
       onFilter({ startDate, endDate });
     } else {
+      console.log('No dates selected, showing alert');
       alert('Silakan pilih tanggal mulai dan tanggal selesai untuk menerapkan filter!');
     }
   };
