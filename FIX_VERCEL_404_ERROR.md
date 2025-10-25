@@ -273,3 +273,6 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 5. **Verify** environment variables
 
 **Vercel 404 error sudah diperbaiki!** 🚀
+
+
+

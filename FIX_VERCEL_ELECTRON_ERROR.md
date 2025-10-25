@@ -186,3 +186,6 @@ admin-klinik-backend/
 5. **Configure** environment variables
 
 **Vercel deployment error sudah diperbaiki!** 🚀
+
+
+

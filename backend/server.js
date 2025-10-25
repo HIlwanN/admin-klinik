@@ -215,10 +215,19 @@ app.delete('/api/patients/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Export patients to CSV
-app.get('/api/patients/export/csv', authenticateToken, (req, res) => {
+// Export patients to CSV with date filter
+app.get('/api/patients/export/csv', authenticateToken, async (req, res) => {
   try {
-    const patients = db.prepare('SELECT * FROM patients ORDER BY created_at DESC').all();
+    const { startDate, endDate } = req.query;
+    
+    let patients;
+    if (startDate && endDate) {
+      // Filter by date range
+      patients = await db.getPatientsByDateRange(startDate, endDate);
+    } else {
+      // Get all patients
+      patients = await db.getPatients();
+    }
     
     // CSV Header
     const headers = ['No. RM', 'Nama', 'Tanggal Lahir', 'Jenis Kelamin', 'Alamat', 'Telepon', 'Diagnosa', 'Golongan Darah', 'Dibuat'];
@@ -242,8 +251,12 @@ app.get('/api/patients/export/csv', authenticateToken, (req, res) => {
       .join('\n');
     
     // Set headers for download
+    const filename = startDate && endDate 
+      ? `data-pasien-${startDate}-to-${endDate}.csv`
+      : `data-pasien-${new Date().toISOString().split('T')[0]}.csv`;
+    
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="data-pasien-${Date.now()}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send('\uFEFF' + csv); // BOM for Excel UTF-8 support
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -385,10 +398,19 @@ app.get('/api/schedules/grid', authenticateToken, async (req, res) => {
   }
 });
 
-// Export schedules to CSV
+// Export schedules to CSV with date filter
 app.get('/api/schedules/export/csv', authenticateToken, async (req, res) => {
   try {
-    const schedules = await db.getSchedules();
+    const { startDate, endDate } = req.query;
+    
+    let schedules;
+    if (startDate && endDate) {
+      // Filter by date range
+      schedules = await db.getSchedulesByDateRange(startDate, endDate);
+    } else {
+      // Get all schedules
+      schedules = await db.getSchedules();
+    }
     
     // CSV Header
     const headers = ['No. RM', 'Nama Pasien', 'Tanggal', 'Waktu Mulai', 'Waktu Selesai', 'Ruangan', 'Mesin Dialisis', 'Perawat', 'Status', 'Catatan'];
@@ -407,12 +429,147 @@ app.get('/api/schedules/export/csv', authenticateToken, async (req, res) => {
       s.catatan
     ]);
     
-    // Combine
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+    // Generate CSV
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
     
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=jadwal.csv');
-    res.send(csv);
+    // Set headers for download
+    const filename = startDate && endDate 
+      ? `jadwal-${startDate}-to-${endDate}.csv`
+      : `jadwal-${new Date().toISOString().split('T')[0]}.csv`;
+    
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send('\uFEFF' + csv); // BOM for Excel UTF-8 support
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Export comprehensive report with date filter
+app.get('/api/reports/export/csv', authenticateToken, async (req, res) => {
+  try {
+    const { startDate, endDate, reportType } = req.query;
+    
+    let data = [];
+    let headers = [];
+    let filename = '';
+    
+    switch (reportType) {
+      case 'patients':
+        data = startDate && endDate 
+          ? await db.getPatientsByDateRange(startDate, endDate)
+          : await db.getPatients();
+        headers = ['No. RM', 'Nama', 'Tanggal Lahir', 'Jenis Kelamin', 'Alamat', 'Telepon', 'Diagnosa', 'Golongan Darah', 'Dibuat'];
+        filename = startDate && endDate 
+          ? `laporan-pasien-${startDate}-to-${endDate}.csv`
+          : `laporan-pasien-${new Date().toISOString().split('T')[0]}.csv`;
+        break;
+        
+      case 'schedules':
+        data = startDate && endDate 
+          ? await db.getSchedulesByDateRange(startDate, endDate)
+          : await db.getSchedules();
+        headers = ['No. RM', 'Nama Pasien', 'Tanggal', 'Waktu Mulai', 'Waktu Selesai', 'Ruangan', 'Mesin Dialisis', 'Perawat', 'Status', 'Catatan'];
+        filename = startDate && endDate 
+          ? `laporan-jadwal-${startDate}-to-${endDate}.csv`
+          : `laporan-jadwal-${new Date().toISOString().split('T')[0]}.csv`;
+        break;
+        
+      case 'deceased':
+        data = startDate && endDate 
+          ? await db.getDeceasedPatientsByDateRange(startDate, endDate)
+          : await db.getDeceasedPatients();
+        headers = ['Nama Pasien', 'Tanggal Meninggal', 'No. Handphone', 'Alamat', 'Dibuat'];
+        filename = startDate && endDate 
+          ? `laporan-meninggal-${startDate}-to-${endDate}.csv`
+          : `laporan-meninggal-${new Date().toISOString().split('T')[0]}.csv`;
+        break;
+        
+      case 'comprehensive':
+        // Comprehensive report with all data
+        const patients = startDate && endDate 
+          ? await db.getPatientsByDateRange(startDate, endDate)
+          : await db.getPatients();
+        const schedules = startDate && endDate 
+          ? await db.getSchedulesByDateRange(startDate, endDate)
+          : await db.getSchedules();
+        const deceased = startDate && endDate 
+          ? await db.getDeceasedPatientsByDateRange(startDate, endDate)
+          : await db.getDeceasedPatients();
+          
+        // Create comprehensive data
+        data = [
+          ...patients.map(p => ({ type: 'Patient', ...p })),
+          ...schedules.map(s => ({ type: 'Schedule', ...s })),
+          ...deceased.map(d => ({ type: 'Deceased', ...d }))
+        ];
+        headers = ['Type', 'No. RM', 'Nama', 'Tanggal', 'Status', 'Details'];
+        filename = startDate && endDate 
+          ? `laporan-lengkap-${startDate}-to-${endDate}.csv`
+          : `laporan-lengkap-${new Date().toISOString().split('T')[0]}.csv`;
+        break;
+        
+      default:
+        return res.status(400).json({ error: 'Invalid report type' });
+    }
+    
+    // Generate CSV rows based on report type
+    let rows = [];
+    if (reportType === 'comprehensive') {
+      rows = data.map(item => [
+        item.type,
+        item.no_rekam_medis || '',
+        item.nama || item.nama_pasien || '',
+        item.tanggal || item.tanggal_meninggal || item.created_at,
+        item.status || 'Active',
+        JSON.stringify(item)
+      ]);
+    } else if (reportType === 'patients') {
+      rows = data.map(p => [
+        p.no_rekam_medis,
+        p.nama,
+        p.tanggal_lahir,
+        p.jenis_kelamin,
+        p.alamat || '',
+        p.telepon || '',
+        p.diagnosa || '',
+        p.golongan_darah || '',
+        new Date(p.created_at).toLocaleString('id-ID')
+      ]);
+    } else if (reportType === 'schedules') {
+      rows = data.map(s => [
+        s.patient?.no_rekam_medis || '',
+        s.patient?.nama || '',
+        s.tanggal,
+        s.waktu_mulai,
+        s.waktu_selesai,
+        s.ruangan,
+        s.mesin_dialisis,
+        s.perawat,
+        s.status,
+        s.catatan
+      ]);
+    } else if (reportType === 'deceased') {
+      rows = data.map(d => [
+        d.nama_pasien,
+        d.tanggal_meninggal,
+        d.no_handphone || '',
+        d.alamat || '',
+        new Date(d.created_at).toLocaleString('id-ID')
+      ]);
+    }
+    
+    // Generate CSV
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+    
+    // Set headers for download
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send('\uFEFF' + csv); // BOM for Excel UTF-8 support
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

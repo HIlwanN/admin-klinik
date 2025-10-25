@@ -190,3 +190,6 @@ curl https://your-app.vercel.app/api/health
 5. **Monitor** logs untuk error
 
 **Vercel configuration sudah diperbaiki!** 🚀
+
+
+

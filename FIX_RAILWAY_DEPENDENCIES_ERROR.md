@@ -217,3 +217,6 @@ curl https://your-app.railway.app
 5. **Monitor** untuk errors
 
 **Railway dependencies error sudah diperbaiki!** 🚀
+
+
+

@@ -31,9 +31,24 @@ const db = {
       .from('patients')
       .select('*')
       .order('created_at', { ascending: false });
-    
+
     if (error) {
       console.error('Error fetching patients:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  async getPatientsByDateRange(startDate, endDate) {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching patients by date range:', error);
       throw error;
     }
     return data;
@@ -113,6 +128,21 @@ const db = {
     
     if (error) {
       console.error('Error fetching deceased patients:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  async getDeceasedPatientsByDateRange(startDate, endDate) {
+    const { data, error } = await supabase
+      .from('deceased_patients')
+      .select('*')
+      .gte('tanggal_meninggal', startDate)
+      .lte('tanggal_meninggal', endDate)
+      .order('tanggal_meninggal', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching deceased patients by date range:', error);
       throw error;
     }
     return data;
@@ -224,6 +254,24 @@ const db = {
     
     if (error) {
       console.error('Error fetching patient schedules:', error);
+      throw error;
+    }
+    return data;
+  },
+
+  async getSchedulesByDateRange(startDate, endDate) {
+    const { data, error } = await supabase
+      .from('schedules')
+      .select(`
+        *,
+        patient:patients(nama, no_rekam_medis)
+      `)
+      .gte('tanggal', startDate)
+      .lte('tanggal', endDate)
+      .order('tanggal', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching schedules by date range:', error);
       throw error;
     }
     return data;

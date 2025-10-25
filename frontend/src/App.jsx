@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
 import Schedules from './pages/Schedules';
-import AutoScheduler from './pages/AutoScheduler';
 import BedManager from './pages/BedManager';
 import QuickLogin from './components/QuickLogin';
 import UserManagement from './components/UserManagement';
@@ -41,14 +40,6 @@ function Navigation({ user, onLogout }) {
             className={`nav-link ${location.pathname === '/schedules' ? 'active' : ''}`}
           >
             Jadwal Manual
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link 
-            to="/auto-scheduler" 
-            className={`nav-link ${location.pathname === '/auto-scheduler' ? 'active' : ''}`}
-          >
-            🤖 Jadwal Otomatis
           </Link>
         </li>
         <li className="nav-item">
@@ -306,7 +297,6 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/patients" element={<Patients />} />
           <Route path="/schedules" element={<Schedules />} />
-          <Route path="/auto-scheduler" element={<AutoScheduler />} />
           <Route path="/bed-manager" element={<BedManager />} />
           <Route path="/multi-user" element={<MultiUserDashboard />} />
           <Route path="/users" element={<UserManagement />} />

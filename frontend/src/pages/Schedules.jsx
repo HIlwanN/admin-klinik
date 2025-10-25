@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DateFilter from '../components/DateFilter';
 
 function ScheduleModal({ schedule, onClose, onSave }) {
   const [patients, setPatients] = useState([]);
@@ -240,6 +241,7 @@ function Schedules() {
   const [showModal, setShowModal] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [filterDate, setFilterDate] = useState('');
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   useEffect(() => {
     fetchSchedules();
@@ -352,8 +354,9 @@ function Schedules() {
     ? schedules.filter(s => s.tanggal === filterDate)
     : schedules;
 
-  const handleDownload = async () => {
+  const handleDownload = async (filters = {}) => {
     try {
+      setDownloadLoading(true);
       const token = localStorage.getItem('authToken');
       
       if (!token) {
@@ -361,7 +364,11 @@ function Schedules() {
         return;
       }
 
-      const response = await fetch('/api/schedules/export/csv', {
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+
+      const response = await fetch(`/api/schedules/export/csv?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -375,15 +382,24 @@ function Schedules() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `jadwal-cuci-darah-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+      a.download = `jadwal-cuci-darah-${filters.startDate || 'all'}-${filters.endDate || 'all'}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      
+      alert('Data berhasil diunduh!');
     } catch (error) {
       console.error('Error downloading data:', error);
       alert('Gagal mengunduh data. Silakan coba lagi.');
+    } finally {
+      setDownloadLoading(false);
     }
+  };
+
+  const handleFilter = (filters) => {
+    // For schedules, we can implement filtering logic here
+    console.log('Schedules filter applied:', filters);
   };
 
   return (
@@ -405,7 +421,7 @@ function Schedules() {
               Reset Filter
             </button>
           )}
-          <button className="btn btn-secondary" onClick={handleDownload}>
+          <button className="btn btn-secondary" onClick={() => handleDownload()}>
             📥 Download
           </button>
           <button className="btn btn-primary" onClick={handleAdd}>
@@ -413,6 +429,13 @@ function Schedules() {
           </button>
         </div>
       </div>
+
+      <DateFilter 
+        onFilter={handleFilter}
+        onDownload={handleDownload}
+        reportType="schedules"
+        loading={downloadLoading}
+      />
 
       {filteredSchedules.length > 0 ? (
         <div className="table-container">

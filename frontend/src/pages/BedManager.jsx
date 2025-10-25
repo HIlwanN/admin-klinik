@@ -7,8 +7,21 @@ function BedManager() {
   const [beds, setBeds] = useState([]);
   const [patients, setPatients] = useState([]);
   const [selectedBed, setSelectedBed] = useState(null);
-  const [selectedPatient, setSelectedPatient] = useState('');
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Schedule form states
+  const [scheduleForm, setScheduleForm] = useState({
+    patient_id: '',
+    tanggal: '',
+    status: 'scheduled',
+    waktu_mulai: '',
+    waktu_selesai: '',
+    ruangan: '',
+    mesin_dialisis: '',
+    perawat: '',
+    catatan: ''
+  });
 
   const shifts = [
     { id: 'pagi', name: 'Pagi', time: '07:00-11:00', color: '#FF69B4' },
@@ -80,7 +93,19 @@ function BedManager() {
   const handleBedClick = (bed) => {
     if (bed.status === 'available') {
       setSelectedBed(bed);
-      setSelectedPatient('');
+      // Pre-fill form dengan data bed yang dipilih
+      setScheduleForm({
+        patient_id: '',
+        tanggal: selectedDate,
+        status: 'scheduled',
+        waktu_mulai: getShiftStartTime(selectedShift),
+        waktu_selesai: getShiftEndTime(selectedShift),
+        ruangan: `Ruang ${bed.room}`,
+        mesin_dialisis: `Bed ${bed.bedNumber}`,
+        perawat: '',
+        catatan: ''
+      });
+      setShowScheduleForm(true);
     } else {
       // Show options for occupied bed
       const action = confirm(
@@ -93,6 +118,26 @@ function BedManager() {
       if (action && bed.schedule?.id) {
         handleCompleteSchedule(bed.schedule.id);
       }
+    }
+  };
+
+  const getShiftStartTime = (shift) => {
+    switch(shift) {
+      case 'pagi': return '07:00';
+      case 'siang': return '11:00';
+      case 'sore': return '15:00';
+      case 'malam': return '19:00';
+      default: return '07:00';
+    }
+  };
+
+  const getShiftEndTime = (shift) => {
+    switch(shift) {
+      case 'pagi': return '11:00';
+      case 'siang': return '15:00';
+      case 'sore': return '19:00';
+      case 'malam': return '23:00';
+      default: return '11:00';
     }
   };
 
@@ -121,59 +166,53 @@ function BedManager() {
     }
   };
 
-  const handleAssignPatient = async () => {
-    if (!selectedBed || !selectedPatient) {
-      alert('Pilih bed dan pasien terlebih dahulu');
+  const handleSaveSchedule = async () => {
+    if (!scheduleForm.patient_id) {
+      alert('Pilih pasien terlebih dahulu');
       return;
     }
 
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const shift = shifts.find(s => s.id === selectedShift);
       
-      const scheduleData = {
-        patient_id: selectedPatient,
-        tanggal: selectedDate,
-        waktu_mulai: shift.id === 'pagi' ? '07:00' : 
-                      shift.id === 'siang' ? '11:00' : 
-                      shift.id === 'sore' ? '15:00' : '19:00',
-        waktu_selesai: shift.id === 'pagi' ? '11:00' : 
-                        shift.id === 'siang' ? '15:00' : 
-                        shift.id === 'sore' ? '19:00' : '23:00',
-        ruangan: `Ruang ${selectedBed.room}`,
-        mesin_dialisis: `Bed ${selectedBed.bedNumber}`,
-        perawat: 'Akan ditentukan',
-        status: 'scheduled',
-        catatan: `Bed ${selectedBed.bedNumber} - Ruang ${selectedBed.room}`
-      };
-
       const response = await fetch('/api/schedules', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(scheduleData)
+        body: JSON.stringify(scheduleForm)
       });
 
       if (!response.ok) throw new Error('Gagal membuat jadwal');
 
-      alert(`Berhasil assign pasien ke Bed ${selectedBed.bedNumber}!`);
+      alert(`✅ Jadwal berhasil dibuat untuk Bed ${selectedBed.bedNumber}!`);
+      setShowScheduleForm(false);
       setSelectedBed(null);
-      setSelectedPatient('');
       await fetchBedStatus();
     } catch (error) {
-      console.error('Error assigning patient:', error);
-      alert('Gagal assign pasien: ' + error.message);
+      console.error('Error creating schedule:', error);
+      alert('Gagal membuat jadwal: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancelAssignment = () => {
+  const handleCancelSchedule = () => {
+    setShowScheduleForm(false);
     setSelectedBed(null);
-    setSelectedPatient('');
+    setScheduleForm({
+      patient_id: '',
+      tanggal: '',
+      status: 'scheduled',
+      waktu_mulai: '',
+      waktu_selesai: '',
+      ruangan: '',
+      mesin_dialisis: '',
+      perawat: '',
+      catatan: ''
+    });
   };
 
   const getBedStatus = (bed) => {
@@ -294,53 +333,157 @@ function BedManager() {
         </div>
       </div>
 
-      {/* Assignment Modal */}
-      {selectedBed && (
-        <div className="assignment-modal-overlay" onClick={handleCancelAssignment}>
-          <div className="assignment-modal" onClick={(e) => e.stopPropagation()}>
+      {/* Schedule Form Modal */}
+      {showScheduleForm && selectedBed && (
+        <div className="schedule-modal-overlay" onClick={handleCancelSchedule}>
+          <div className="schedule-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Assign Pasien ke Bed {selectedBed.bedNumber}</h3>
-              <button className="close-btn" onClick={handleCancelAssignment}>×</button>
+              <h3><strong>Tambah Jadwal Baru</strong></h3>
+              <button className="close-btn" onClick={handleCancelSchedule}>×</button>
             </div>
             
             <div className="modal-body">
-              <div className="bed-info">
-                <p><strong>Ruang:</strong> {selectedBed.room}</p>
-                <p><strong>Tanggal:</strong> {new Date(selectedDate).toLocaleDateString('id-ID')}</p>
-                <p><strong>Shift:</strong> {currentShift?.name} ({currentShift?.time})</p>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="patient_id"><strong>Pasien *</strong></label>
+                  <select
+                    id="patient_id"
+                    value={scheduleForm.patient_id}
+                    onChange={(e) => setScheduleForm({...scheduleForm, patient_id: e.target.value})}
+                    className="form-select"
+                    required
+                  >
+                    <option value="">Pilih Pasien</option>
+                    {patients.map(patient => (
+                      <option key={patient.id} value={patient.id}>
+                        {patient.nama} - {patient.no_rekam_medis}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="tanggal"><strong>Tanggal *</strong></label>
+                  <input
+                    type="date"
+                    id="tanggal"
+                    value={scheduleForm.tanggal}
+                    onChange={(e) => setScheduleForm({...scheduleForm, tanggal: e.target.value})}
+                    className="form-input"
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="patient-select-group">
-                <label>Pilih Pasien:</label>
-                <select
-                  value={selectedPatient}
-                  onChange={(e) => setSelectedPatient(e.target.value)}
-                  className="patient-select"
-                >
-                  <option value="">-- Pilih Pasien --</option>
-                  {patients.map(patient => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.nama} - {patient.no_rekam_medis}
-                    </option>
-                  ))}
-                </select>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="status"><strong>Status *</strong></label>
+                  <select
+                    id="status"
+                    value={scheduleForm.status}
+                    onChange={(e) => setScheduleForm({...scheduleForm, status: e.target.value})}
+                    className="form-select"
+                    required
+                  >
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="waktu_mulai"><strong>Waktu Mulai *</strong></label>
+                  <input
+                    type="time"
+                    id="waktu_mulai"
+                    value={scheduleForm.waktu_mulai}
+                    onChange={(e) => setScheduleForm({...scheduleForm, waktu_mulai: e.target.value})}
+                    className="form-input"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="waktu_selesai"><strong>Waktu Selesai *</strong></label>
+                  <input
+                    type="time"
+                    id="waktu_selesai"
+                    value={scheduleForm.waktu_selesai}
+                    onChange={(e) => setScheduleForm({...scheduleForm, waktu_selesai: e.target.value})}
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="ruangan"><strong>Ruangan</strong></label>
+                  <input
+                    type="text"
+                    id="ruangan"
+                    value={scheduleForm.ruangan}
+                    onChange={(e) => setScheduleForm({...scheduleForm, ruangan: e.target.value})}
+                    className="form-input"
+                    placeholder="Contoh: Ruang Hemodialisis 1"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="mesin_dialisis"><strong>Mesin Dialisis</strong></label>
+                  <input
+                    type="text"
+                    id="mesin_dialisis"
+                    value={scheduleForm.mesin_dialisis}
+                    onChange={(e) => setScheduleForm({...scheduleForm, mesin_dialisis: e.target.value})}
+                    className="form-input"
+                    placeholder="Contoh: Mesin HD_01"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="perawat"><strong>Perawat</strong></label>
+                  <input
+                    type="text"
+                    id="perawat"
+                    value={scheduleForm.perawat}
+                    onChange={(e) => setScheduleForm({...scheduleForm, perawat: e.target.value})}
+                    className="form-input"
+                    placeholder="Nama perawat"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="catatan"><strong>Catatan</strong></label>
+                <textarea
+                  id="catatan"
+                  value={scheduleForm.catatan}
+                  onChange={(e) => setScheduleForm({...scheduleForm, catatan: e.target.value})}
+                  className="form-textarea"
+                  placeholder="Catatan tambahan..."
+                  rows="3"
+                />
               </div>
             </div>
 
             <div className="modal-footer">
               <button
                 className="btn btn-secondary"
-                onClick={handleCancelAssignment}
+                onClick={handleCancelSchedule}
                 disabled={loading}
               >
                 Batal
               </button>
               <button
                 className="btn btn-primary"
-                onClick={handleAssignPatient}
-                disabled={!selectedPatient || loading}
+                onClick={handleSaveSchedule}
+                disabled={!scheduleForm.patient_id || loading}
               >
-                {loading ? 'Menyimpan...' : '✓ Assign Pasien'}
+                {loading ? 'Menyimpan...' : '✓ Simpan Jadwal'}
               </button>
             </div>
           </div>

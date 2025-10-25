@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DateFilter from '../components/DateFilter';
 
 function Dashboard() {
   const [stats, setStats] = useState({
@@ -10,6 +11,7 @@ function Dashboard() {
   const [recentSchedules, setRecentSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -73,6 +75,55 @@ function Dashboard() {
     }
   };
 
+  const handleDownloadReport = async (filters) => {
+    try {
+      setDownloadLoading(true);
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        alert('Token tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+      params.append('reportType', 'comprehensive');
+
+      const response = await fetch(`/api/reports/export/csv?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengunduh laporan');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `laporan-dashboard-${filters.startDate || 'all'}-${filters.endDate || 'all'}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      alert('Laporan berhasil diunduh!');
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      alert('Gagal mengunduh laporan: ' + error.message);
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
+
+  const handleFilter = (filters) => {
+    // For dashboard, we can implement filtering logic here
+    console.log('Dashboard filter applied:', filters);
+  };
+
   if (loading) {
     return (
       <div className="container">
@@ -102,6 +153,13 @@ function Dashboard() {
           </button>
         </div>
       </div>
+
+      <DateFilter 
+        onFilter={handleFilter}
+        onDownload={handleDownloadReport}
+        reportType="comprehensive"
+        loading={downloadLoading}
+      />
 
       <div className="stats-grid">
         <div className="stat-card stat-purple">
