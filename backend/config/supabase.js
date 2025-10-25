@@ -40,17 +40,25 @@ const db = {
   },
 
   async getPatientsByDateRange(startDate, endDate) {
+    // Convert dates to proper format for comparison
+    const startDateTime = `${startDate}T00:00:00.000Z`;
+    const endDateTime = `${endDate}T23:59:59.999Z`;
+    
+    console.log('getPatientsByDateRange called with:', { startDate, endDate, startDateTime, endDateTime });
+    
     const { data, error } = await supabase
       .from('patients')
       .select('*')
-      .gte('created_at', startDate)
-      .lte('created_at', endDate)
+      .gte('created_at', startDateTime)
+      .lte('created_at', endDateTime)
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching patients by date range:', error);
       throw error;
     }
+    
+    console.log('getPatientsByDateRange result:', data.length, 'patients');
     return data;
   },
 

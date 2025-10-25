@@ -70,6 +70,7 @@ function Dashboard() {
   };
 
   const handleFilter = (filters) => {
+    console.log('Dashboard filter applied:', filters);
     setDateFilter(filters);
     fetchDashboardData(filters);
   };

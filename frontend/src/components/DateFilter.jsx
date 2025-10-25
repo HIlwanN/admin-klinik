@@ -9,7 +9,7 @@ function DateFilter({ onFilter, onDownload, reportType, loading = false }) {
     if (startDate && endDate) {
       onFilter({ startDate, endDate });
     } else {
-      onFilter({});
+      alert('Silakan pilih tanggal mulai dan tanggal selesai untuk menerapkan filter!');
     }
   };
 

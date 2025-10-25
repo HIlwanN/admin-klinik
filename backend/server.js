@@ -111,16 +111,22 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
 app.get('/api/patients', authenticateToken, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
+    console.log('Patients API called with filters:', { startDate, endDate });
     
     let patients;
     if (startDate && endDate) {
+      console.log('Filtering patients by date range:', startDate, 'to', endDate);
       patients = await db.getPatientsByDateRange(startDate, endDate);
+      console.log('Filtered patients count:', patients.length);
     } else {
+      console.log('Getting all patients (no filter)');
       patients = await db.getPatients();
+      console.log('All patients count:', patients.length);
     }
     
     res.json(patients);
   } catch (error) {
+    console.error('Error in patients API:', error);
     res.status(500).json({ error: error.message });
   }
 });
