@@ -8,8 +8,8 @@ import QuickLogin from './components/QuickLogin';
 import UserManagement from './components/UserManagement';
 import SessionManager from './components/SessionManager';
 import MultiUserDashboard from './components/MultiUserDashboard';
-import RSLogo from './RS.png';
-import RHLogo from './RH.png';
+import RSLogo from './LOGO_RSUD UMAR WIRAHADIKUSUMAH.png';
+import RHLogo from './Logo_Ruang_HD_-removebg-preview.png';
 import './multi-user.css';
 
 function Navigation({ user, onLogout }) {
