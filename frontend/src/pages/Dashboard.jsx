@@ -12,6 +12,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [dateFilter, setDateFilter] = useState({});
 
   useEffect(() => {
     fetchDashboardData();
@@ -22,58 +23,6 @@ function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        setLoading(false);
-        return;
-      }
-
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      const [patientsRes, schedulesRes] = await Promise.all([
-        fetch('/api/patients', { headers }),
-        fetch('/api/schedules', { headers })
-      ]);
-
-      if (!patientsRes.ok || !schedulesRes.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const patients = await patientsRes.json();
-      const schedules = await schedulesRes.json();
-
-      const today = new Date().toISOString().split('T')[0];
-      const todaySchedules = schedules.filter(s => s.tanggal === today && s.status === 'scheduled');
-      const upcomingSchedules = schedules.filter(s => s.tanggal > today && s.status === 'scheduled');
-
-      setStats({
-        totalPatients: patients.length,
-        totalSchedules: schedules.length,
-        todaySchedules: todaySchedules.length,
-        upcomingSchedules: upcomingSchedules.length
-      });
-
-      // Sort jadwal berdasarkan tanggal terbaru dan ambil 5 teratas
-      const sortedSchedules = schedules
-        .sort((a, b) => new Date(b.created_at || b.tanggal) - new Date(a.created_at || a.tanggal))
-        .slice(0, 5);
-
-      console.log('Processed schedules for dashboard:', sortedSchedules); // Debug log
-      setRecentSchedules(sortedSchedules);
-      setLastUpdated(new Date());
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setLoading(false);
-    }
-  };
 
   const handleDownloadReport = async (filters) => {
     try {
@@ -121,8 +70,62 @@ function Dashboard() {
   };
 
   const handleFilter = (filters) => {
-    // For dashboard, we can implement filtering logic here
-    console.log('Dashboard filter applied:', filters);
+    setDateFilter(filters);
+    fetchDashboardData(filters);
+  };
+
+  const fetchDashboardData = async (filters = {}) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        setLoading(false);
+        return;
+      }
+
+      // Build query parameters for filtering
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+
+      // Fetch patients with optional date filter
+      const patientsResponse = await fetch(`/api/patients?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const patients = await patientsResponse.json();
+
+      // Fetch schedules with optional date filter
+      const schedulesResponse = await fetch(`/api/schedules?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const schedules = await schedulesResponse.json();
+
+      // Calculate stats based on filtered data
+      const today = new Date().toISOString().split('T')[0];
+      const todaySchedules = schedules.filter(s => s.tanggal === today);
+      const upcomingSchedules = schedules.filter(s => s.tanggal > today);
+
+      setStats({
+        totalPatients: patients.length,
+        totalSchedules: schedules.length,
+        todaySchedules: todaySchedules.length,
+        upcomingSchedules: upcomingSchedules.length
+      });
+
+      // Process schedules for display
+      const sortedSchedules = schedules
+        .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
+        .slice(0, 5);
+
+      console.log('Processed schedules for dashboard:', sortedSchedules);
+      setRecentSchedules(sortedSchedules);
+      setLastUpdated(new Date());
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setLoading(false);
+    }
   };
 
   if (loading) {

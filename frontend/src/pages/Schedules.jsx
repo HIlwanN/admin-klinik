@@ -242,38 +242,12 @@ function Schedules() {
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [filterDate, setFilterDate] = useState('');
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [dateFilter, setDateFilter] = useState({});
 
   useEffect(() => {
     fetchSchedules();
   }, []);
 
-  const fetchSchedules = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
-      const response = await fetch('/api/schedules', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Schedules data received:', data); // Debug log
-      setSchedules(data || []);
-    } catch (error) {
-      console.error('Error fetching schedules:', error);
-      setSchedules([]);
-    }
-  };
 
   const handleAdd = () => {
     setEditingSchedule(null);
@@ -399,8 +373,39 @@ function Schedules() {
   };
 
   const handleFilter = (filters) => {
-    // For schedules, we can implement filtering logic here
-    console.log('Schedules filter applied:', filters);
+    setDateFilter(filters);
+    fetchSchedules(filters);
+  };
+
+  const fetchSchedules = async (filters = {}) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+
+      const response = await fetch(`/api/schedules?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setSchedules(data || []);
+    } catch (error) {
+      console.error('Error fetching schedules:', error);
+      setSchedules([]);
+    }
   };
 
   return (

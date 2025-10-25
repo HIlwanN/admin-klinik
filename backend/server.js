@@ -107,10 +107,18 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
 
 // ==================== PATIENT ROUTES ====================
 
-// Get all patients
+// Get all patients with optional date filter
 app.get('/api/patients', authenticateToken, async (req, res) => {
   try {
-    const patients = await db.getPatients();
+    const { startDate, endDate } = req.query;
+    
+    let patients;
+    if (startDate && endDate) {
+      patients = await db.getPatientsByDateRange(startDate, endDate);
+    } else {
+      patients = await db.getPatients();
+    }
+    
     res.json(patients);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -266,10 +274,18 @@ app.get('/api/patients/export/csv', authenticateToken, async (req, res) => {
 
 // ==================== DECEASED PATIENTS ROUTES ====================
 
-// Get all deceased patients
+// Get all deceased patients with optional date filter
 app.get('/api/deceased-patients', authenticateToken, async (req, res) => {
   try {
-    const deceasedPatients = await db.getDeceasedPatients();
+    const { startDate, endDate } = req.query;
+    
+    let deceasedPatients;
+    if (startDate && endDate) {
+      deceasedPatients = await db.getDeceasedPatientsByDateRange(startDate, endDate);
+    } else {
+      deceasedPatients = await db.getDeceasedPatients();
+    }
+    
     res.json(deceasedPatients);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -379,7 +395,15 @@ app.delete('/api/deceased-patients/:id', authenticateToken, async (req, res) => 
 // Get all schedules with patient info
 app.get('/api/schedules', authenticateToken, async (req, res) => {
   try {
-    const schedules = await db.getSchedules();
+    const { startDate, endDate } = req.query;
+    
+    let schedules;
+    if (startDate && endDate) {
+      schedules = await db.getSchedulesByDateRange(startDate, endDate);
+    } else {
+      schedules = await db.getSchedules();
+    }
+    
     res.json(schedules);
   } catch (error) {
     res.status(500).json({ error: error.message });

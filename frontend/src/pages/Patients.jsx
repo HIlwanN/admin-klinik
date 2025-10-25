@@ -330,65 +330,13 @@ function Patients() {
   const [editingDeceasedPatient, setEditingDeceasedPatient] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'deceased'
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [dateFilter, setDateFilter] = useState({});
 
   useEffect(() => {
     fetchPatients();
     fetchDeceasedPatients();
   }, []);
 
-  const fetchPatients = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
-      const response = await fetch('/api/patients', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setPatients(data || []);
-    } catch (error) {
-      console.error('Error fetching patients:', error);
-      setPatients([]);
-    }
-  };
-
-  const fetchDeceasedPatients = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
-      const response = await fetch('/api/deceased-patients', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setDeceasedPatients(data || []);
-    } catch (error) {
-      console.error('Error fetching deceased patients:', error);
-      setDeceasedPatients([]);
-    }
-  };
 
   const handleAdd = () => {
     setEditingPatient(null);
@@ -642,8 +590,69 @@ function Patients() {
   };
 
   const handleFilter = (filters) => {
-    // For patients, we can implement filtering logic here
-    console.log('Patients filter applied:', filters);
+    setDateFilter(filters);
+    fetchPatients(filters);
+    fetchDeceasedPatients(filters);
+  };
+
+  const fetchPatients = async (filters = {}) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+
+      const response = await fetch(`/api/patients?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPatients(data);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+    }
+  };
+
+  const fetchDeceasedPatients = async (filters = {}) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+
+      const response = await fetch(`/api/deceased-patients?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setDeceasedPatients(data);
+    } catch (error) {
+      console.error('Error fetching deceased patients:', error);
+    }
   };
 
   return (
