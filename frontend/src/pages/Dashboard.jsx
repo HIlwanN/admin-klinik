@@ -97,7 +97,8 @@ function Dashboard() {
       });
 
       if (!response.ok) {
-        throw new Error('Gagal mengunduh laporan');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Gagal mengunduh laporan');
       }
 
       const blob = await response.blob();

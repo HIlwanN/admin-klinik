@@ -220,14 +220,15 @@ app.get('/api/patients/export/csv', authenticateToken, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
-    let patients;
-    if (startDate && endDate) {
-      // Filter by date range
-      patients = await db.getPatientsByDateRange(startDate, endDate);
-    } else {
-      // Get all patients
-      patients = await db.getPatients();
+    // Validate required date parameters
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        error: 'Tanggal mulai dan tanggal selesai harus diisi untuk download data' 
+      });
     }
+    
+    // Filter by date range
+    const patients = await db.getPatientsByDateRange(startDate, endDate);
     
     // CSV Header
     const headers = ['No. RM', 'Nama', 'Tanggal Lahir', 'Jenis Kelamin', 'Alamat', 'Telepon', 'Diagnosa', 'Golongan Darah', 'Dibuat'];
@@ -403,14 +404,15 @@ app.get('/api/schedules/export/csv', authenticateToken, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
-    let schedules;
-    if (startDate && endDate) {
-      // Filter by date range
-      schedules = await db.getSchedulesByDateRange(startDate, endDate);
-    } else {
-      // Get all schedules
-      schedules = await db.getSchedules();
+    // Validate required date parameters
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        error: 'Tanggal mulai dan tanggal selesai harus diisi untuk download data' 
+      });
     }
+    
+    // Filter by date range
+    const schedules = await db.getSchedulesByDateRange(startDate, endDate);
     
     // CSV Header
     const headers = ['No. RM', 'Nama Pasien', 'Tanggal', 'Waktu Mulai', 'Waktu Selesai', 'Ruangan', 'Mesin Dialisis', 'Perawat', 'Status', 'Catatan'];
@@ -452,52 +454,41 @@ app.get('/api/reports/export/csv', authenticateToken, async (req, res) => {
   try {
     const { startDate, endDate, reportType } = req.query;
     
+    // Validate required date parameters
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        error: 'Tanggal mulai dan tanggal selesai harus diisi untuk download data' 
+      });
+    }
+    
     let data = [];
     let headers = [];
     let filename = '';
     
     switch (reportType) {
       case 'patients':
-        data = startDate && endDate 
-          ? await db.getPatientsByDateRange(startDate, endDate)
-          : await db.getPatients();
+        data = await db.getPatientsByDateRange(startDate, endDate);
         headers = ['No. RM', 'Nama', 'Tanggal Lahir', 'Jenis Kelamin', 'Alamat', 'Telepon', 'Diagnosa', 'Golongan Darah', 'Dibuat'];
-        filename = startDate && endDate 
-          ? `laporan-pasien-${startDate}-to-${endDate}.csv`
-          : `laporan-pasien-${new Date().toISOString().split('T')[0]}.csv`;
+        filename = `laporan-pasien-${startDate}-to-${endDate}.csv`;
         break;
         
       case 'schedules':
-        data = startDate && endDate 
-          ? await db.getSchedulesByDateRange(startDate, endDate)
-          : await db.getSchedules();
+        data = await db.getSchedulesByDateRange(startDate, endDate);
         headers = ['No. RM', 'Nama Pasien', 'Tanggal', 'Waktu Mulai', 'Waktu Selesai', 'Ruangan', 'Mesin Dialisis', 'Perawat', 'Status', 'Catatan'];
-        filename = startDate && endDate 
-          ? `laporan-jadwal-${startDate}-to-${endDate}.csv`
-          : `laporan-jadwal-${new Date().toISOString().split('T')[0]}.csv`;
+        filename = `laporan-jadwal-${startDate}-to-${endDate}.csv`;
         break;
         
       case 'deceased':
-        data = startDate && endDate 
-          ? await db.getDeceasedPatientsByDateRange(startDate, endDate)
-          : await db.getDeceasedPatients();
+        data = await db.getDeceasedPatientsByDateRange(startDate, endDate);
         headers = ['Nama Pasien', 'Tanggal Meninggal', 'No. Handphone', 'Alamat', 'Dibuat'];
-        filename = startDate && endDate 
-          ? `laporan-meninggal-${startDate}-to-${endDate}.csv`
-          : `laporan-meninggal-${new Date().toISOString().split('T')[0]}.csv`;
+        filename = `laporan-meninggal-${startDate}-to-${endDate}.csv`;
         break;
         
       case 'comprehensive':
         // Comprehensive report with all data
-        const patients = startDate && endDate 
-          ? await db.getPatientsByDateRange(startDate, endDate)
-          : await db.getPatients();
-        const schedules = startDate && endDate 
-          ? await db.getSchedulesByDateRange(startDate, endDate)
-          : await db.getSchedules();
-        const deceased = startDate && endDate 
-          ? await db.getDeceasedPatientsByDateRange(startDate, endDate)
-          : await db.getDeceasedPatients();
+        const patients = await db.getPatientsByDateRange(startDate, endDate);
+        const schedules = await db.getSchedulesByDateRange(startDate, endDate);
+        const deceased = await db.getDeceasedPatientsByDateRange(startDate, endDate);
           
         // Create comprehensive data
         data = [
@@ -506,9 +497,7 @@ app.get('/api/reports/export/csv', authenticateToken, async (req, res) => {
           ...deceased.map(d => ({ type: 'Deceased', ...d }))
         ];
         headers = ['Type', 'No. RM', 'Nama', 'Tanggal', 'Status', 'Details'];
-        filename = startDate && endDate 
-          ? `laporan-lengkap-${startDate}-to-${endDate}.csv`
-          : `laporan-lengkap-${new Date().toISOString().split('T')[0]}.csv`;
+        filename = `laporan-lengkap-${startDate}-to-${endDate}.csv`;
         break;
         
       default:

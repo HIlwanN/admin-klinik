@@ -375,7 +375,8 @@ function Schedules() {
       });
 
       if (!response.ok) {
-        throw new Error('Gagal mengunduh data');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Gagal mengunduh data');
       }
 
       const blob = await response.blob();

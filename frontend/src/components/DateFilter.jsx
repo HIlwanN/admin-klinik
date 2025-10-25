@@ -17,7 +17,7 @@ function DateFilter({ onFilter, onDownload, reportType, loading = false }) {
     if (startDate && endDate) {
       onDownload({ startDate, endDate, reportType });
     } else {
-      onDownload({ reportType });
+      alert('Silakan pilih tanggal mulai dan tanggal selesai untuk download data!');
     }
   };
 
