@@ -36,8 +36,8 @@ body {
 
 /* Header */
 .header {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: var(--white);
+  background: linear-gradient(135deg, #eeceef 0%, #efd1ce 100%);
+  color: var(--dark);
   padding: 1.5rem 2rem;
   box-shadow: var(--shadow-lg);
 }
