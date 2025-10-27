@@ -6,7 +6,8 @@ dotenv.config();
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
+// Use service role key for backend operations to bypass RLS
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'your-anon-key';
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseKey, {
