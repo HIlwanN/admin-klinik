@@ -222,8 +222,8 @@ async function createWindow() {
       mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHTML)}`);
     }
   } else {
-    // Production: Load built files
-    console.log('Production mode - loading from dist...');
+    // Production: Load from backend server (backend serves static files)
+    console.log('Production mode - loading from backend server...');
     
     // Wait for backend
     const backendReady = await checkServer(`http://localhost:${PORT}/api/patients`, 30, 1000);
@@ -233,9 +233,10 @@ async function createWindow() {
     }
     
     try {
-      await mainWindow.loadFile(join(__dirname, '../frontend/dist/index.html'));
+      // Load from backend server which serves static frontend files
+      await mainWindow.loadURL(`http://localhost:${PORT}/`);
     } catch (error) {
-      console.error('Failed to load frontend:', error);
+      console.error('Failed to load frontend from backend:', error);
       
       const errorHTML = `
         <html>

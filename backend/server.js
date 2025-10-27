@@ -867,13 +867,23 @@ app.get('/api/health', async (req, res) => {
 
 // ==================== SERVER ====================
 
-// Serve static files from frontend build (for production) - DISABLED FOR TESTING
-// app.use(express.static(join(__dirname, '../frontend/dist')));
+// Serve static files from frontend build (for production)
+if (isElectron) {
+  // In Electron, serve from resources folder
+  app.use(express.static(join(__dirname, '../../resources/app/frontend/dist')));
+} else {
+  // In dev or web deployment, serve from ../frontend/dist
+  app.use(express.static(join(__dirname, '../frontend/dist')));
+}
 
-// Serve frontend for any other routes (SPA support) - DISABLED FOR TESTING
-// app.get('*', (req, res) => {
-//   res.sendFile(join(__dirname, '../frontend/dist/index.html'));
-// });
+// Serve frontend for any other routes (SPA support)
+app.get('*', (req, res) => {
+  if (isElectron) {
+    res.sendFile(join(__dirname, '../../resources/app/frontend/dist/index.html'));
+  } else {
+    res.sendFile(join(__dirname, '../frontend/dist/index.html'));
+  }
+});
 
 // Only start server if not in Vercel (serverless)
 if (process.env.VERCEL !== '1') {
