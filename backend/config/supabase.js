@@ -441,7 +441,7 @@ const db = {
     }
   },
 
-  async getBedStatus(date, shift) {
+  async getBedStatus(date, shift, floor = '1') {
     try {
       // Define shift time ranges
       const shiftTimes = {
@@ -471,24 +471,29 @@ const db = {
 
       if (error) throw error;
 
-      // Initialize 12 beds (3 rooms x 4 beds each)
-      const totalBeds = 12;
-      const bedsPerRoom = 4;
+      // Floor-based bed system
+      const floor1Beds = 22;
+      const floor2Beds = 10;
+      const floorNum = parseInt(floor) || 1;
+      
+      // Determine bed range for the floor
+      const currentFloorBeds = floorNum === 1 ? floor1Beds : floor2Beds;
+      const startBedNumber = floorNum === 1 ? 1 : floor1Beds + 1;
+      const endBedNumber = floorNum === 1 ? floor1Beds : floor1Beds + floor2Beds;
+      
       const beds = [];
 
-      for (let i = 0; i < totalBeds; i++) {
-        const bedNumber = i + 1;
-        const room = Math.floor(i / bedsPerRoom) + 1;
+      for (let i = 0; i < currentFloorBeds; i++) {
+        const bedNumber = startBedNumber + i;
         
-        // Find schedule for this specific bed - prioritize mesin_dialisis exact match
+        // Find schedule for this specific bed
         const schedule = schedules?.find(s => {
-          // First priority: exact bed number match
           if (s.mesin_dialisis === `Bed ${bedNumber}`) {
             return true;
           }
           
-          // Second priority: match bed number AND room number
-          if (s.mesin_dialisis === `Bed ${bedNumber}` && s.ruangan === `Ruang ${room}`) {
+          // Match by lantai in ruangan field
+          if (s.ruangan === `Lantai ${floorNum}` && s.mesin_dialisis === `Bed ${bedNumber}`) {
             return true;
           }
           
@@ -497,7 +502,7 @@ const db = {
 
         beds.push({
           bedNumber,
-          room,
+          floor: floorNum,
           status: schedule ? 'occupied' : 'available',
           patient: schedule?.patient || null,
           schedule: schedule || null
@@ -507,8 +512,9 @@ const db = {
       return {
         date,
         shift,
+        floor: floorNum,
         beds,
-        totalBeds,
+        totalBeds: currentFloorBeds,
         availableBeds: beds.filter(b => b.status === 'available').length,
         occupiedBeds: beds.filter(b => b.status === 'occupied').length
       };

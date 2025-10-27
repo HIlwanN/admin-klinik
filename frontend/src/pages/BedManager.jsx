@@ -30,15 +30,16 @@ function BedManager() {
     { id: 'malam', name: 'Malam', time: '19:00-23:00', color: '#1abc9c' }
   ];
 
-  // Total beds: 3 rooms x 4 beds each = 12 beds
-  const totalBeds = 12;
-  const bedsPerRoom = 4;
-  const totalRooms = 3;
+  // Floor system: Floor 1 = 22 beds, Floor 2 = 10 beds
+  const [selectedFloor, setSelectedFloor] = useState(1);
+  const floor1Beds = 22;
+  const floor2Beds = 10;
+  const totalBeds = floor1Beds + floor2Beds;
 
   useEffect(() => {
     fetchPatients();
     fetchBedStatus();
-  }, [selectedDate, selectedShift]);
+  }, [selectedDate, selectedShift, selectedFloor]);
 
   // Auto-refresh every 10 seconds
   useEffect(() => {
@@ -46,7 +47,7 @@ function BedManager() {
       fetchBedStatus();
     }, 10000);
     return () => clearInterval(interval);
-  }, [selectedDate, selectedShift]);
+  }, [selectedDate, selectedShift, selectedFloor]);
 
   const fetchPatients = async () => {
     try {
@@ -68,7 +69,7 @@ function BedManager() {
   const fetchBedStatus = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/beds/status?date=${selectedDate}&shift=${selectedShift}`, {
+      const response = await fetch(`/api/beds/status?date=${selectedDate}&shift=${selectedShift}&floor=${selectedFloor}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -78,10 +79,13 @@ function BedManager() {
       setBeds(data.beds || []);
     } catch (error) {
       console.error('Error fetching bed status:', error);
-      // Initialize empty beds
-      const emptyBeds = Array.from({ length: totalBeds }, (_, i) => ({
-        bedNumber: i + 1,
-        room: Math.floor(i / bedsPerRoom) + 1,
+      // Initialize empty beds for current floor
+      const currentFloorBeds = selectedFloor === 1 ? floor1Beds : floor2Beds;
+      const startBedNumber = selectedFloor === 1 ? 1 : floor1Beds + 1;
+      
+      const emptyBeds = Array.from({ length: currentFloorBeds }, (_, i) => ({
+        bedNumber: startBedNumber + i,
+        floor: selectedFloor,
         status: 'available',
         patient: null,
         schedule: null
@@ -100,7 +104,7 @@ function BedManager() {
         status: 'scheduled',
         waktu_mulai: getShiftStartTime(selectedShift),
         waktu_selesai: getShiftEndTime(selectedShift),
-        ruangan: `Ruang ${bed.room}`,
+        ruangan: `Lantai ${bed.floor || selectedFloor}`,
         mesin_dialisis: `Bed ${bed.bedNumber}`,
         perawat: '',
         catatan: ''
@@ -109,7 +113,7 @@ function BedManager() {
     } else {
       // Show options for occupied bed
       const action = confirm(
-        `Bed ${bed.bedNumber} - Ruang ${bed.room}\n` +
+        `Bed ${bed.bedNumber} - Lantai ${bed.floor || selectedFloor}\n` +
         `Pasien: ${bed.patient?.nama || 'Unknown'}\n` +
         `No. RM: ${bed.patient?.no_rekam_medis || '-'}\n\n` +
         `Klik OK untuk SELESAI (complete), atau CANCEL untuk tutup.`
@@ -229,8 +233,26 @@ function BedManager() {
         <h2>🛏️ Manajemen Bed Hemodialisis</h2>
       </div>
 
-      {/* Date and Shift Selector */}
+      {/* Floor Selector */}
       <div className="controls-panel">
+        <div className="control-group">
+          <label>🏢 Lantai</label>
+          <div className="floor-selector">
+            <button
+              className={`floor-btn ${selectedFloor === 1 ? 'active' : ''}`}
+              onClick={() => setSelectedFloor(1)}
+            >
+              Lantai 1 (22 Bed)
+            </button>
+            <button
+              className={`floor-btn ${selectedFloor === 2 ? 'active' : ''}`}
+              onClick={() => setSelectedFloor(2)}
+            >
+              Lantai 2 (10 Bed)
+            </button>
+          </div>
+        </div>
+
         <div className="control-group">
           <label>📅 Tanggal</label>
           <input
@@ -276,42 +298,37 @@ function BedManager() {
         </div>
       </div>
 
-      {/* Bed Grid - Cinema Style */}
+      {/* Bed Grid - Floor Layout */}
       <div className="cinema-screen">
-        <div className="screen-label">🏥 AREA HEMODIALISIS</div>
+        <div className="screen-label">🏥 Lantai {selectedFloor} - Hemodialisis</div>
       </div>
 
       <div className="beds-grid">
-        {Array.from({ length: totalRooms }).map((_, roomIdx) => (
-          <div key={roomIdx} className="room-section">
-            <div className="room-label">Ruang {roomIdx + 1}</div>
-            <div className="beds-row">
-              {beds
-                .filter(bed => bed.room === roomIdx + 1)
-                .map(bed => (
-                  <div
-                    key={bed.bedNumber}
-                    className={`bed-seat ${getBedStatus(bed)}`}
-                    onClick={() => handleBedClick(bed)}
-                  >
-                    <div className="bed-number">{bed.bedNumber}</div>
-                    {bed.status === 'occupied' && (
-                      <div className="patient-initial">
-                        {bed.patient?.nama?.charAt(0).toUpperCase() || 'P'}
-                      </div>
-                    )}
+        <div className="floor-section">
+          <div className="beds-row">
+            {beds.map(bed => (
+              <div
+                key={bed.bedNumber}
+                className={`bed-seat ${getBedStatus(bed)}`}
+                onClick={() => handleBedClick(bed)}
+              >
+                <div className="bed-number">{bed.bedNumber}</div>
+                {bed.status === 'occupied' && (
+                  <div className="patient-initial">
+                    {bed.patient?.nama?.charAt(0).toUpperCase() || 'P'}
                   </div>
-                ))}
-            </div>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Stats */}
       <div className="bed-stats">
         <div className="stat-card">
-          <span className="stat-label">Total Bed</span>
-          <span className="stat-value">{totalBeds}</span>
+          <span className="stat-label">Bed Lantai {selectedFloor}</span>
+          <span className="stat-value">{selectedFloor === 1 ? floor1Beds : floor2Beds}</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Tersedia</span>

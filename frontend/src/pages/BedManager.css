@@ -59,6 +59,36 @@
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
+/* Floor Selector */
+.floor-selector {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.floor-btn {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 130px;
+}
+
+.floor-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-color: #3498db;
+}
+
+.floor-btn.active {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border-color: #2980b9;
+}
+
 /* Shift Selector */
 .shift-selector {
   display: flex;
@@ -164,6 +194,13 @@
   gap: 3rem;
   margin-bottom: 2rem;
   perspective: 1000px;
+}
+
+.floor-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .room-section {

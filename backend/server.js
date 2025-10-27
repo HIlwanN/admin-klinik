@@ -607,13 +607,13 @@ app.get('/api/reports/export/csv', authenticateToken, async (req, res) => {
 // Get bed status for a specific date and shift
 app.get('/api/beds/status', authenticateToken, async (req, res) => {
   try {
-    const { date, shift } = req.query;
+    const { date, shift, floor } = req.query;
     
     if (!date || !shift) {
       return res.status(400).json({ error: 'Date and shift are required' });
     }
     
-    const bedStatus = await db.getBedStatus(date, shift);
+    const bedStatus = await db.getBedStatus(date, shift, floor);
     res.json(bedStatus);
   } catch (error) {
     console.error('Error getting bed status:', error);
