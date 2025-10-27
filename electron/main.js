@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { spawn } from 'child_process';
 import http from 'http';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,7 +15,7 @@ const PORT = 3000;
 const FRONTEND_PORT = 5173;
 
 // Path to backend server
-const backendPath = join(__dirname, '../backend/server.js');
+const backendPath = join(process.resourcesPath, 'backend/server.js');
 
 // Check if server is ready
 function checkServer(url, maxRetries = 30, interval = 1000) {
@@ -52,16 +53,41 @@ function checkServer(url, maxRetries = 30, interval = 1000) {
 // Start backend server
 function startBackend() {
   console.log('Starting backend server...');
+  console.log('Backend path:', backendPath);
   
-  backendProcess = spawn('node', [backendPath], {
+  // Try to find node in system PATH
+  let nodeExecutable = 'node';
+  
+  // In production, we need to use the bundled node from Electron
+  if (!isDev) {
+    const platform = process.platform;
+    if (platform === 'win32') {
+      nodeExecutable = 'node.exe';
+    }
+  }
+  
+  backendProcess = spawn(nodeExecutable, [backendPath], {
     env: {
       ...process.env,
       PORT: PORT.toString(),
       ELECTRON_APP: 'true',
+      NODE_ENV: 'production',
       // Set database path to user data directory
-      DB_PATH: join(app.getPath('userData'), 'hospital.db')
+      DB_PATH: join(app.getPath('userData'), 'hospital.db'),
+      // Set Supabase env from local .env file
+      PATH: process.env.PATH
     },
-    stdio: 'inherit'
+    stdio: ['pipe', 'pipe', 'pipe'],
+    cwd: join(process.resourcesPath, 'backend'),
+    shell: true
+  });
+
+  backendProcess.stdout.on('data', (data) => {
+    console.log(`Backend: ${data}`);
+  });
+
+  backendProcess.stderr.on('data', (data) => {
+    console.error(`Backend Error: ${data}`);
   });
 
   backendProcess.on('error', (err) => {
@@ -71,6 +97,33 @@ function startBackend() {
   backendProcess.on('close', (code) => {
     console.log(`Backend process exited with code ${code}`);
   });
+}
+
+// Create .env file if it doesn't exist
+function ensureEnvFile() {
+  const backendDir = join(process.resourcesPath, 'backend');
+  const envPath = join(backendDir, '.env');
+  const envExamplePath = join(backendDir, 'env.example');
+  
+  // If .env doesn't exist, copy from env.example
+  if (!fs.existsSync(envPath)) {
+    console.log('Creating .env file from env.example...');
+    
+    if (fs.existsSync(envExamplePath)) {
+      const envExample = fs.readFileSync(envExamplePath, 'utf8');
+      fs.writeFileSync(envPath, envExample);
+      console.log('Created .env file with default values');
+    } else {
+      // Create minimal .env
+      const minimalEnv = `# Supabase Configuration
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+PORT=3000
+`;
+      fs.writeFileSync(envPath, minimalEnv);
+      console.log('Created minimal .env file');
+    }
+  }
 }
 
 // Stop backend server
@@ -295,11 +348,14 @@ app.whenReady().then(async () => {
   
   // Start backend first (only in production mode)
   if (!isDev) {
+    console.log('Ensuring .env file exists...');
+    ensureEnvFile();
+    
     console.log('Starting backend server...');
     startBackend();
     
     // Wait a bit for backend to initialize
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
   } else {
     console.log('Development mode - backend should be running separately');
   }

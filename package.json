@@ -9,10 +9,10 @@
     "start": "npm --prefix backend install && npm --prefix backend start",
     "start:production": "npm run build && npm --prefix backend install && npm --prefix backend start",
     "electron:dev": "cross-env NODE_ENV=development electron .",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:win": "npm run build && electron-builder --win",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:linux": "npm run build && electron-builder --linux",
+    "electron:build": "npm run build && npm --prefix backend install && electron-builder",
+    "electron:build:win": "npm run build && npm --prefix backend install && electron-builder --win",
+    "electron:build:mac": "npm run build && npm --prefix backend install && electron-builder --mac",
+    "electron:build:linux": "npm run build && npm --prefix backend install && electron-builder --linux",
     "postinstall": "electron-builder install-app-deps",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run electron:dev\"",
     "dev:frontend": "npm --prefix frontend run dev",
@@ -41,13 +41,22 @@
       "backend/**/*",
       "frontend/dist/**/*",
       "!backend/node_modules/**/*",
-      "!backend/hospital.db"
+      "!backend/hospital.db",
+      "!backend/env-fixed",
+      "!backend/env-template",
+      "!backend/package-lock.json"
     ],
     "extraResources": [
       {
         "from": "backend",
         "to": "backend",
-        "filter": ["**/*", "!node_modules", "!hospital.db"]
+        "filter": [
+          "**/*",
+          "!hospital.db",
+          "!env-fixed",
+          "!env-template",
+          "!package-lock.json"
+        ]
       }
     ],
     "win": {
