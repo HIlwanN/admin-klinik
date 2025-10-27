@@ -49,6 +49,11 @@
         "from": "backend",
         "to": "backend",
         "filter": ["**/*", "!node_modules", "!hospital.db"]
+      },
+      {
+        "from": "frontend/dist",
+        "to": "frontend/dist",
+        "filter": ["**/*"]
       }
     ],
     "win": {

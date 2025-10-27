@@ -41,6 +41,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isElectron = process.env.ELECTRON_APP === 'true';
 
+console.log('📁 Current __dirname:', __dirname);
+console.log('💻 Is Electron:', isElectron);
+console.log('🔧 Node environment:', process.env.NODE_ENV);
+
 // Middleware
 // CORS only needed for web deployment, not for Electron
 if (!isElectron) {
@@ -867,22 +871,51 @@ app.get('/api/health', async (req, res) => {
 
 // ==================== SERVER ====================
 
-// Serve static files from frontend build (for production)
-if (isElectron) {
-  // In Electron, serve from resources folder
-  app.use(express.static(join(__dirname, '../../resources/app/frontend/dist')));
-} else {
-  // In dev or web deployment, serve from ../frontend/dist
-  app.use(express.static(join(__dirname, '../frontend/dist')));
+// Serve static files from frontend build
+// Path structure in Electron: resources/app/frontend/dist
+import fs from 'fs';
+
+const tryStaticPath = (relativePath, label) => {
+  const fullPath = join(__dirname, relativePath);
+  if (fs.existsSync(fullPath)) {
+    console.log(`✓ Serving static files from ${label}:`, fullPath);
+    app.use(express.static(fullPath));
+    return fullPath;
+  }
+  console.log(`✗ Path not found (${label}):`, fullPath);
+  return null;
+};
+
+// Try different paths
+const staticPath = 
+  tryStaticPath('../frontend/dist', 'Dev') ||
+  tryStaticPath('../../resources/app/frontend/dist', 'Electron Resources') ||
+  tryStaticPath('../../../resources/app/frontend/dist', 'Electron Resources Alt');
+
+if (!staticPath) {
+  console.log('⚠️ WARNING: Frontend static files not found!');
 }
 
 // Serve frontend for any other routes (SPA support)
 app.get('*', (req, res) => {
-  if (isElectron) {
-    res.sendFile(join(__dirname, '../../resources/app/frontend/dist/index.html'));
-  } else {
-    res.sendFile(join(__dirname, '../frontend/dist/index.html'));
+  const indexPath = staticPath ? join(staticPath, 'index.html') : null;
+  
+  if (indexPath && fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
   }
+  
+  console.log('✗ index.html not found, sending error page');
+  res.status(404).send(`
+    <html>
+      <head><title>Error</title></head>
+      <body>
+        <h1>Frontend not found</h1>
+        <p>Expected path: ${indexPath || 'unknown'}</p>
+        <p>Current __dirname: ${__dirname}</p>
+        <p>Is Electron: ${isElectron}</p>
+      </body>
+    </html>
+  `);
 });
 
 // Only start server if not in Vercel (serverless)
