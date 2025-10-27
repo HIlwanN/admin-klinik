@@ -8,9 +8,10 @@ import db from './config/supabase.js';
 dotenv.config();
 
 // Create Supabase client
+// Use service role key for backend operations to bypass RLS
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';

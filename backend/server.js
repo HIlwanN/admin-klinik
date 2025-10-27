@@ -14,9 +14,10 @@ console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'Set' : 'NOT SET');
 console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'Set' : 'NOT SET');
 
 // Create Supabase client
+// Use service role key for backend operations to bypass RLS
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
 );
 import { 
   authenticateToken, 
