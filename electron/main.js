@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { spawn } from 'child_process';
 import http from 'http';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -63,7 +64,6 @@ function startBackend() {
   console.log('📁 Backend server.js:', backendPath);
   
   // Check if backend directory exists
-  const fs = require('fs');
   if (!fs.existsSync(backendDir)) {
     console.error('❌ Backend directory not found:', backendDir);
     return;
