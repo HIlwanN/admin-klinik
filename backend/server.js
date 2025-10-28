@@ -889,10 +889,8 @@ const tryStaticPath = (relativePath, label) => {
 // Try different paths
 const staticPath = 
   tryStaticPath('../frontend/dist', 'Dev') ||
-  tryStaticPath('../../resources/frontend/dist', 'Electron Resources (Root)') ||
-  tryStaticPath('../../resources/app/frontend/dist', 'Electron Resources (App)') ||
-  tryStaticPath('../../../resources/frontend/dist', 'Electron Resources Alt') ||
-  tryStaticPath('../../../resources/app/frontend/dist', 'Electron Resources Alt App');
+  tryStaticPath('../../resources/frontend-dist', 'Electron Resources (new)') ||
+  tryStaticPath('../../../resources/frontend-dist', 'Electron Resources (alt)');
 
 if (!staticPath) {
   console.log('⚠️ WARNING: Frontend static files not found!');
