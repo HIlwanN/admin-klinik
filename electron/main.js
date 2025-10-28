@@ -49,6 +49,8 @@ function checkServer(url, maxRetries = 30, interval = 1000) {
 // Start backend server
 function startBackend() {
   console.log('Starting backend server...');
+  console.log('📁 Resources path:', process.resourcesPath);
+  console.log('📁 __dirname:', __dirname);
   
   // Path to backend directory and server file
   const backendDir = isDev 
@@ -56,6 +58,23 @@ function startBackend() {
     : join(process.resourcesPath, 'backend');
   
   const backendPath = join(backendDir, 'server.js');
+  
+  console.log('📁 Backend directory:', backendDir);
+  console.log('📁 Backend server.js:', backendPath);
+  
+  // Check if backend directory exists
+  const fs = require('fs');
+  if (!fs.existsSync(backendDir)) {
+    console.error('❌ Backend directory not found:', backendDir);
+    return;
+  }
+  
+  if (!fs.existsSync(backendPath)) {
+    console.error('❌ Backend server.js not found:', backendPath);
+    return;
+  }
+  
+  console.log('✓ Backend files found, starting server...');
   
   backendProcess = spawn('node', [backendPath], {
     cwd: backendDir,
@@ -67,15 +86,21 @@ function startBackend() {
       // Set database path to user data directory
       DB_PATH: join(app.getPath('userData'), 'hospital.db')
     },
-    stdio: 'inherit'
+    stdio: ['inherit', 'inherit', 'inherit'] // Explicitly redirect all stdio
   });
 
   backendProcess.on('error', (err) => {
-    console.error('Failed to start backend:', err);
+    console.error('❌ Failed to start backend:', err);
+    console.error('Error details:', err.message);
+    console.error('Error code:', err.code);
   });
 
   backendProcess.on('close', (code) => {
     console.log(`Backend process exited with code ${code}`);
+  });
+  
+  backendProcess.on('spawn', () => {
+    console.log('✓ Backend process spawned successfully');
   });
 }
 
@@ -225,15 +250,78 @@ async function createWindow() {
     // Production: Load from backend server (backend serves static files)
     console.log('Production mode - loading from backend server...');
     
+    // Get backend paths for error display
+    const backendDir = isDev 
+      ? join(__dirname, '../backend')
+      : join(process.resourcesPath, 'backend');
+    const backendPath = join(backendDir, 'server.js');
+    
     // Wait for backend
-    const backendReady = await checkServer(`http://localhost:${PORT}/api/patients`, 30, 1000);
+    console.log('Waiting for backend to start...');
+    const backendReady = await checkServer(`http://localhost:${PORT}/api/patients`, 60, 1000);
     
     if (!backendReady) {
-      console.warn('Backend not ready, but continuing...');
+      console.error('❌ Backend not ready after 60 attempts');
+      
+      // Show detailed error
+      const errorHTML = `
+        <html>
+          <head>
+            <style>
+              body { 
+                margin: 0; 
+                padding: 40px; 
+                background: #f5f7fa;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+              }
+              .error {
+                max-width: 600px;
+                margin: 0 auto;
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              }
+              h1 { color: #e74c3c; margin-top: 0; }
+              code { background: #2c3e50; color: #ecf0f1; padding: 2px 6px; border-radius: 3px; }
+              .note { background: #ffe6e6; padding: 15px; border-radius: 5px; margin-top: 20px; border-left: 4px solid #e74c3c; }
+              .paths { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="error">
+              <h1>⚠️ Backend Server Failed to Start</h1>
+              <p>Backend tidak dapat dimulai setelah 60 detik.</p>
+              
+              <div class="note">
+                <strong>Detail Teknis:</strong>
+                <ul>
+                  <li>Port: ${PORT}</li>
+                  <li>Resources path: ${process.resourcesPath || 'unknown'}</li>
+                  <li>Backend dir: ${backendDir}</li>
+                  <li>Backend path: ${backendPath}</li>
+                </ul>
+              </div>
+              
+              <div class="paths">
+                <strong>Silakan:</strong>
+                <ol>
+                  <li>Cek file <code>backend/server.js</code> ada di resources folder</li>
+                  <li>Pastikan Node.js terinstall di sistem</li>
+                  <li>Restart aplikasi</li>
+                </ol>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+      mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHTML)}`);
+      return;
     }
     
     try {
       // Load from backend server which serves static frontend files
+      console.log('✓ Backend ready, loading frontend...');
       await mainWindow.loadURL(`http://localhost:${PORT}/`);
     } catch (error) {
       console.error('Failed to load frontend from backend:', error);
