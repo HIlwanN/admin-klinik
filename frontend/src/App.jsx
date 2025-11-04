@@ -102,20 +102,56 @@ function App() {
 
   useEffect(() => {
     checkAuthStatus();
+    
+    // Listen for auth expiration events from API calls
+    const handleAuthExpired = () => {
+      console.warn('Auth expired, logging out...');
+      localStorage.clear();
+      setUser(null);
+      setShowQuickLogin(true);
+    };
+    
+    window.addEventListener('auth-expired', handleAuthExpired);
+    
+    return () => {
+      window.removeEventListener('auth-expired', handleAuthExpired);
+    };
   }, []);
 
-  const checkAuthStatus = () => {
+  const checkAuthStatus = async () => {
     try {
       const token = localStorage.getItem('authToken');
       const userData = localStorage.getItem('user');
       
       if (token && userData) {
         try {
-          const user = JSON.parse(userData);
-          setUser(user);
+          // Verify token is still valid by calling backend
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const user = await response.json();
+            setUser(user);
+            // Update localStorage with fresh user data
+            localStorage.setItem('user', JSON.stringify(user));
+          } else {
+            // Token invalid or expired, clear everything
+            console.warn('Token invalid or expired, clearing session');
+            localStorage.clear();
+            setUser(null);
+          }
         } catch (error) {
-          console.error('Error parsing user data:', error);
-          localStorage.clear();
+          console.error('Error verifying token:', error);
+          // Network error, keep token but show login if needed
+          try {
+            const user = JSON.parse(userData);
+            setUser(user);
+          } catch (parseError) {
+            localStorage.clear();
+          }
         }
       }
       setLoading(false);

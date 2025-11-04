@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DateFilter from '../components/DateFilter';
+import { apiFetch, apiJson } from '../utils/api';
 
 function DeceasedPatientModal({ deceasedPatient, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -409,34 +410,20 @@ function Patients() {
 
   const handleSave = async (formData) => {
     try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        alert('Sesi telah berakhir. Silakan login kembali.');
-        return;
-      }
-
       const url = editingPatient 
         ? `/api/patients/${editingPatient.id}`
         : '/api/patients';
       
       const method = editingPatient ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const result = await apiJson(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Gagal menyimpan data pasien');
-      }
-
-      const result = await response.json();
       console.log('Patient saved successfully:', result);
 
       setShowModal(false);
@@ -444,7 +431,11 @@ function Patients() {
       alert(editingPatient ? 'Data pasien berhasil diperbarui!' : 'Data pasien berhasil ditambahkan!');
     } catch (error) {
       console.error('Error saving patient:', error);
-      alert('Gagal menyimpan data pasien: ' + error.message);
+      if (error.message.includes('token') || error.message.includes('Session')) {
+        alert('Sesi telah berakhir. Silakan login kembali.');
+      } else {
+        alert('Gagal menyimpan data pasien: ' + error.message);
+      }
     }
   };
 
@@ -597,61 +588,35 @@ function Patients() {
 
   const fetchPatients = async (filters = {}) => {
     try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
       const params = new URLSearchParams();
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
 
-      const response = await fetch(`/api/patients?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await apiJson(`/api/patients?${params}`);
       setPatients(data);
     } catch (error) {
       console.error('Error fetching patients:', error);
+      if (error.message.includes('token') || error.message.includes('Session')) {
+        // Token expired, will be handled by App.jsx via event
+        setPatients([]);
+      }
     }
   };
 
   const fetchDeceasedPatients = async (filters = {}) => {
     try {
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        console.error('No auth token found');
-        return;
-      }
-
       const params = new URLSearchParams();
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
 
-      const response = await fetch(`/api/deceased-patients?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await apiJson(`/api/deceased-patients?${params}`);
       setDeceasedPatients(data);
     } catch (error) {
       console.error('Error fetching deceased patients:', error);
+      if (error.message.includes('token') || error.message.includes('Session')) {
+        // Token expired, will be handled by App.jsx via event
+        setDeceasedPatients([]);
+      }
     }
   };
 

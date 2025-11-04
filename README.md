@@ -51,30 +51,103 @@
 ## 📋 Prasyarat
 
 Sebelum memulai, pastikan Anda telah menginstal:
-- **Node.js** (versi 16 atau lebih baru)
-- **npm** atau **yarn**
+- **Node.js** (versi 18 atau lebih baru) - [Download](https://nodejs.org/)
+- **npm** (terinstall bersama Node.js)
+- **Git** (untuk clone repository) - [Download](https://git-scm.com/)
+
+### 🗄️ Database: Supabase (Cloud Database)
+
+Sistem ini menggunakan **Supabase** sebagai database cloud. Anda perlu:
+
+1. **Buat akun Supabase** (gratis) di [https://supabase.com](https://supabase.com)
+2. **Buat project baru** di Supabase Dashboard
+3. **Import database schema**:
+   - Buka Supabase Dashboard → SQL Editor
+   - Jalankan file `supabase-schema.sql` yang ada di root project
+4. **Ambil credentials**:
+   - Buka Settings → API
+   - Copy `Project URL` dan `anon key`
+   - Copy juga `service_role key` (untuk backend)
+
+### ⚙️ Konfigurasi Environment
+
+Setelah clone repository, buat file `backend/.env` dengan isi:
+
+```env
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+JWT_SECRET=your-random-32-characters-secret-key
+NODE_ENV=production
+PORT=3000
+```
+
+**Catatan penting:**
+- Jangan ada spasi sebelum/t setelah `=`
+- Jangan ada karakter `@` di depan URL
+- Generate JWT_SECRET dengan: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
 ## 🚀 Instalasi dan Menjalankan Aplikasi
 
 ### Mode Desktop App (Direkomendasikan) 💻
 
-#### Quick Start
+#### Langkah Instalasi Lengkap
+
+1. **Clone repository**
 ```bash
-# 1. Install dependencies
-npm install
-cd frontend && npm install && cd ..
-cd backend && npm install && cd ..
-
-# 2. Jalankan aplikasi desktop
-npm run dev
-
-# 3. Build aplikasi desktop (untuk distribusi)
-npm run electron:build:win    # Windows
-npm run electron:build:mac    # macOS
-npm run electron:build:linux  # Linux
+git clone https://github.com/your-username/AdminKlinik.git
+cd AdminKlinik
 ```
 
-File installer akan ada di folder `dist-electron/`
+2. **Setup Supabase Database** (WAJIB)
+   - Buat project Supabase baru
+   - Import `supabase-schema.sql` ke SQL Editor
+   - Ambil credentials (URL, anon key, service_role key)
+
+3. **Buat file `backend/.env`**
+```bash
+# Copy dari template
+cp backend/env.example backend/.env
+
+# Edit file .env dan isi dengan credentials Supabase Anda
+```
+
+4. **Install dependencies**
+```bash
+# Install root dependencies
+npm install
+
+# Install frontend dependencies
+npm --prefix frontend install
+
+# Install backend dependencies
+npm --prefix backend install
+```
+
+5. **Validasi konfigurasi**
+```bash
+# Cek apakah .env sudah benar
+node check-env.js
+```
+
+6. **Jalankan aplikasi (Development)**
+```bash
+npm run dev
+```
+
+7. **Build aplikasi desktop (Production)**
+```bash
+# Windows
+npm run electron:build:win
+
+# macOS
+npm run electron:build:mac
+
+# Linux
+npm run electron:build:linux
+```
+
+File installer/portable akan ada di folder `dist-electron3/`
 
 **Baca panduan lengkap**: [DESKTOP_APP.md](./DESKTOP_APP.md) | [QUICK_START.md](./QUICK_START.md)
 

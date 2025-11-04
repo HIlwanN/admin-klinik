@@ -9,8 +9,10 @@
     "start": "npm --prefix backend install && npm --prefix backend start",
     "start:production": "npm run build && npm --prefix backend install && npm --prefix backend start",
     "electron:dev": "cross-env NODE_ENV=development electron .",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build": "npm run build && npm ci --prefix backend --omit=dev && electron-builder",
+    "electron:build:win": "node check-env.js && npm run build && npm ci --prefix backend --omit=dev && electron-builder --win",
+    "electron:build:win:portable": "node check-env.js && npm run build && npm ci --prefix backend --omit=dev && electron-builder --win portable",
+    "electron:portable:fast": "npx electron-builder --win portable -c.compression=store",
     "electron:build:mac": "npm run build && electron-builder --mac",
     "electron:build:linux": "npm run build && electron-builder --linux",
     "postinstall": "electron-builder install-app-deps",
@@ -34,7 +36,7 @@
     "appId": "com.adminklinik.app",
     "productName": "Admin Klinik",
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron3"
     },
     "files": [
       "electron/**/*",
@@ -48,7 +50,16 @@
       {
         "from": "backend",
         "to": "backend",
-        "filter": ["**/*", "!node_modules", "!hospital.db"]
+        "filter": [
+          "**/*",
+          "!hospital.db",
+          "!.env.backup",
+          "!.env.example",
+          "!env-*",
+          "!*.log",
+          "!*.test.js",
+          "!*.spec.js"
+        ]
       },
       {
         "from": "frontend/dist",
@@ -60,6 +71,10 @@
       "target": [
         {
           "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
           "arch": ["x64"]
         }
       ],

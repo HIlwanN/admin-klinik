@@ -1,8 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-// Load environment variables
-dotenv.config();
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from .env file in backend directory
+dotenv.config({ path: join(__dirname, '../.env') });
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';

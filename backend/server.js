@@ -6,8 +6,13 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import db from './config/supabase.js';
 
-// Load environment variables
-dotenv.config();
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from .env file in backend directory
+// This ensures it works in both development and Electron packaged app
+dotenv.config({ path: join(__dirname, '.env') });
 
 console.log('🔍 Environment check:');
 console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'Set' : 'NOT SET');
@@ -33,9 +38,6 @@ import {
   getClientIP,
   getUserAgent
 } from './auth.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;

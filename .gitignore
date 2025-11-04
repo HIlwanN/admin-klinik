@@ -5,6 +5,8 @@ node_modules/
 # Build outputs
 dist/
 dist-electron/
+dist-electron2/
+dist-electron3/
 */dist/
 frontend/dist/
 backend/dist/
@@ -52,3 +54,15 @@ coverage/
 *.tmp
 *.temp
 .cache/
+
+# Portable/Installation files
+*.zip
+*.exe
+*.dmg
+*.AppImage
+*.deb
+Admin-Klinik-Portable.zip
+Admin-Klinik-Package/
+
+# Backend temporary files
+backend/backend/

@@ -1,12 +1,15 @@
-// API Configuration for Electron Desktop App
+// API Configuration for Electron Desktop App and Web (Vercel)
 const isDevelopment = import.meta.env.DEV;
 const isElectron = window.electronAPI?.isElectron || false;
 
-// For Electron, always use localhost
-// For web development, use relative paths
-export const API_BASE_URL = isElectron || isDevelopment 
-  ? 'http://localhost:3000' 
-  : '';
+// Prefer explicit configuration when provided via env (for cloud deployment)
+const configuredApiBaseRaw = (import.meta.env.VITE_API_BASE_URL || '').trim();
+const configuredApiBase = configuredApiBaseRaw.replace(/\/$/, '');
+
+// For Electron or local dev, use localhost; otherwise use configured base (if any) or relative '/api'
+export const API_BASE_URL = (isElectron || isDevelopment)
+  ? 'http://localhost:3000'
+  : (configuredApiBase || '');
 
 export const API_ENDPOINTS = {
   patients: `${API_BASE_URL}/api/patients`,
