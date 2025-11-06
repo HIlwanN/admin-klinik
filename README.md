@@ -31,22 +31,58 @@
 
 ## 🛠️ Teknologi yang Digunakan
 
-### Desktop App
-- **Electron** - Framework untuk aplikasi desktop cross-platform
-- **Node.js** - Runtime JavaScript
-- **SQLite** - Database lokal offline
+### 🖥️ Desktop Application
+- **Electron v28** - Framework untuk membangun aplikasi desktop cross-platform (Windows, macOS, Linux)
+- **electron-builder v24** - Tool untuk packaging aplikasi menjadi installer (.exe, .dmg, .AppImage)
+- **Node.js v18+** - Runtime JavaScript untuk menjalankan backend di dalam aplikasi desktop
 
-### Backend
-- **Node.js** - Runtime JavaScript
-- **Express.js** - Web framework
-- **Better-SQLite3** - Database SQLite
-- **CORS** - Cross-Origin Resource Sharing
+### 🎨 Frontend
+- **React 18.2** - Library JavaScript untuk membangun UI yang interaktif dan responsif
+- **React Router DOM 6.20** - Routing untuk Single Page Application (SPA)
+- **Vite 5.0** - Build tool modern yang cepat untuk development dan production
+- **CSS3** - Styling dengan gradient, animasi, dan responsive design
+- **Fetch API** - Native JavaScript API untuk HTTP requests ke backend
 
-### Frontend
-- **React 18** - UI Library
-- **React Router** - Routing
-- **Vite** - Build tool
-- **Modern CSS** - Styling dengan gradient dan animasi
+### ⚙️ Backend
+- **Node.js v18+** - JavaScript runtime untuk server-side
+- **Express.js 4.18** - Web framework untuk membangun REST API
+- **Supabase JS Client 2.38** - Client library untuk berinteraksi dengan Supabase database
+- **JWT (jsonwebtoken 9.0)** - JSON Web Tokens untuk authentication dan session management
+- **bcryptjs 2.4** - Library untuk hashing password dengan salt
+- **CORS 2.8** - Middleware untuk Cross-Origin Resource Sharing
+- **dotenv 17.2** - Library untuk mengelola environment variables
+
+### 🗄️ Database & Cloud Services
+- **PostgreSQL** - Database relasional (hosted di Supabase)
+- **Supabase** - Backend-as-a-Service (BaaS) platform yang menyediakan:
+  - PostgreSQL database hosting
+  - Real-time subscriptions
+  - Row Level Security (RLS)
+  - REST API otomatis
+  - Authentication services
+
+### 🔐 Security & Authentication
+- **JWT (JSON Web Tokens)** - Token-based authentication
+- **bcryptjs** - Password hashing dengan salt rounds
+- **Row Level Security (RLS)** - Database-level security di Supabase
+- **CORS** - Cross-Origin Resource Sharing protection
+
+### 📦 Development Tools
+- **npm** - Package manager untuk Node.js
+- **Git** - Version control system
+- **Concurrently 8.2** - Menjalankan multiple npm scripts secara bersamaan
+- **cross-env 7.0** - Cross-platform environment variables
+- **ES Modules (ESM)** - Modern JavaScript module system
+
+### 🚀 Deployment Options
+- **Desktop App** - Portable/Installer untuk Windows (tidak perlu hosting)
+- **Vercel** - Platform untuk deploy frontend web application
+- **Railway** - Platform cloud untuk deploy backend API
+- **Supabase** - Database hosting (gratis tier available)
+
+### 📊 Data Export
+- **CSV Format** - Export data pasien dan jadwal ke Excel-compatible format
+- **JSON Format** - Data exchange format untuk API
 
 ## 📋 Prasyarat
 
